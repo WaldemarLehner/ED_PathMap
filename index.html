@@ -2,13 +2,28 @@
 <html>
 <head>
   <title>E:D PathMap</title>
+  <meta charset="UTF-8">
   <link rel="stylesheet" href="src/css/style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="src/js/drawData.js"></script>
+  <script src="src/js/prepareData.js"></script>
+  <script src="src/js/frontend.js"></script>
 </head>
 <body>
+  <!-- Preloader: Fixed DOM Element that covers the entire screen. Can be used when loading is happening -->
   <div class="preloader">
-    <div id="preload_left"></div>
-    <div id="preload_right"></div>
+    <div class="preload_obj preload_left preload_active"></div>
+    <div class="preload_obj preload_right preload_active"></div>
     <div class="preload_content"></div>
+  </div>
+  <div class="content">
+    <div id="settings">
+      <form enctype="multipart/form-data">
+        <input type="file" id="fileinput"  accept=".json,application/json" />
+
+      </form>
+    </div>
+    <div id="3d_container" class="hidden"></div>
   </div>
 </body>
 
