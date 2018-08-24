@@ -7,7 +7,6 @@ Requires jQuery
 //eventListeners
 $(document).ready(function(){
   $("#fileinput").on("change",importFile);
-  console.log("test");
 });
 
 
@@ -33,15 +32,12 @@ function importFile(){
 function filterData(json_data){
 
   let length = json_data.logs.length; // For Progress
-  console.log(length);
   if(length < 1){
     UI.createError("Given file has no Systems",1000);
   }
   let json_unfiltered = json_data.logs;
-  console.log(json_unfiltered);
   //Check a random system to see if format is good
   let index = Math.floor(( Math.random() * length) - 1 );
-  console.log(index);
   //console.log(json_unfiltered[index]);
   let testsystem = json_unfiltered[index];
   /* Entry has: (* are required)
@@ -69,7 +65,12 @@ function filterData(json_data){
   }
   //Flip array so that first entry is at the begining.
   json_filtered.reverse();
+  console.log("%c System History","color:#bada55");
+  console.log(json_filtered);
+  console.log("%c Unique systems only","color:#bada55");
   console.log(systemMap);
+  console.log("length: "+Object.keys(systemMap).length);
+  //Construct POST Query
 
 
 
