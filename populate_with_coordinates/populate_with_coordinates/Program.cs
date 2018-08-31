@@ -5,6 +5,8 @@ using System.Text;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Newtonsoft.Json;
+using System.Data.SQLite;
 
 
 namespace populate_with_coordinates
@@ -29,6 +31,7 @@ namespace populate_with_coordinates
                 if(!SelectFile("EDSM travel log file (*.json)",false)){ return; /*Kill program if no success */ }
             }
 #endregion
+
             sysList = GenerateSystemList();
         }
 
