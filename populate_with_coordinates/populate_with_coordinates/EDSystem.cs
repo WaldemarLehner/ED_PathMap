@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace populate_with_coordinates
 {
     public class EDSystem
     {
+        [JsonProperty]
         string Name { get; set; }
+        [JsonProperty]
         Point3D Coords { get; set; }
         public EDSystem(string name)
         {
@@ -35,8 +38,11 @@ namespace populate_with_coordinates
             Y = y;
             Z = z;
         }
+        [JsonProperty]
         double X { get; set; }
+        [JsonProperty]
         double Y { get; set; }
+        [JsonProperty]
         double Z { get; set; }
      
 

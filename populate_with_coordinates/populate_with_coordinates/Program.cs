@@ -7,15 +7,19 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Newtonsoft.Json;
 using System.Data.SQLite;
-
+using Newtonsoft.Json.Linq;
 
 namespace populate_with_coordinates
 {
+   
     class Program
     {
         static List<EDSystem> sysList;
+        static string exportJson;
         static string pathDB;
         static string pathLog;
+        static string pathOutput;
+        [STAThread]
         static void Main(string[] args)
         {
 #region SETUP
@@ -26,17 +30,38 @@ namespace populate_with_coordinates
             else
             {
                 Write("Please select the SQLite Database containing the EDSM system dump. You can generate said file using edsm_to_sql.exe");
-                if(!SelectFile("EDSM dump SQLite Database (*.sqlite)", true)){ return; /*Kill program if no success*/ }
+                if(!SelectFile("SQLite Database(*.sqlite)|*.sqlite", true)){ return; /*Kill program if no success*/ }
                 Write("Please select the Log File. Since this is not for production there is no current wait of obtaining said file other than asking the dev for an example file. (please refer to WDX#8000 (discord id) in case you need it.");
-                if(!SelectFile("EDSM travel log file (*.json)",false)){ return; /*Kill program if no success */ }
+                if(!SelectFile("EDSM Travel Log(*.json)|*json", false)){ return; /*Kill program if no success */ }
+                Write("Please select an output directory.");
+                SelectOutputPath();
+
             }
 #endregion
 
             sysList = GenerateSystemList();
+            Write("Serializing Systemlist.");
+            exportJson = JsonConvert.SerializeObject(sysList, Formatting.None);
+            SaveFile("requiredSystems.json", exportJson, pathOutput);
+            Write("Successfully generated requiredSystems.json at " + pathOutput);
+            Wait();
         }
 
 
-
+        static void SaveFile(string filename, string data, string path)
+        {
+            try
+            {
+                var directory = String.Format("{0}\\{1}", path, filename);
+                System.IO.File.WriteAllText(directory, data);
+            }
+            catch(Exception e)
+            {
+                Write("Something went wrong when trying to export the file: " + e.Message);
+                Wait();
+                throw e;
+            }
+        }
         static bool SelectFile(string filter,bool isDataBase)
         {
             bool success;
@@ -84,9 +109,96 @@ namespace populate_with_coordinates
             return success;
 
         }
+        static void SelectOutputPath()
+        {
+            FolderBrowserDialog dialog = new FolderBrowserDialog();
+            if(dialog.ShowDialog() == DialogResult.OK)
+            {
+                if (Directory.Exists(dialog.SelectedPath))
+                {
+                    Write("Successfully pointed at output directory.");
+                    pathOutput = dialog.SelectedPath;
+                }
+                else
+                {
+                    Write("Oh no. It seems like something went wrong. retrying.");
+                    SelectOutputPath();
+                }
+            }
+        }
         static List<EDSystem> GenerateSystemList()
         {
+            Write("Getting required System Data.");
+            List<EDSystem> _sysList = new List<EDSystem>() ;
+            List<string> systemnames = new List<string>();
+            string jsonSerialized = String.Empty;
+            try
+            {
+               jsonSerialized = File.ReadAllText(pathLog);
+            }
+            catch(Exception e)
+            {
+                Write("Could not read given file. ErrorMessage:" + e.Message);
+                Wait();
+                Application.Exit();
+            }
+            JObject JJson = JObject.Parse(jsonSerialized);
+            IList<JToken> systems = JJson["logs"].Children().ToList();
+            foreach (JToken result in systems)
+            {
+                systemnames.Add(result["system"].ToString());
+            }
+            //remove Dupes
+            systemnames = systemnames.Distinct().ToList();
 
+
+            //Prepare SQLite query.
+            //Build SQL command
+            Write("Preparing SQLite Command");
+            StringBuilder cmdBuilder = new StringBuilder().Append("SELECT name,x,y,z FROM systems WHERE name IN (");
+            foreach(string system in systemnames)
+            {
+                cmdBuilder.Append(String.Format("\"{0}\",", system.Replace("'","''")));
+            }
+            //turn out of "_systemName_," → "_systemName_)"
+            cmdBuilder.Length--;
+            cmdBuilder.Append(")");
+            using (var con = new SQLiteConnection { ConnectionString = "Data Source=" + pathDB + ";Version=3" })
+            {
+                try
+                {
+                    con.Open();
+                    using (var cmd = new SQLiteCommand { Connection = con, CommandText = cmdBuilder.ToString() })
+                    {
+                        try
+                        {
+                            Write("Executing command.");
+                            SQLiteDataReader dataReader = cmd.ExecuteReader();
+                            while (dataReader.Read())
+                            {
+                                _sysList.Add(new EDSystem(dataReader.GetString(0), dataReader.GetDouble(1), dataReader.GetDouble(2), dataReader.GetDouble(3)));
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Write("Something went wrong: " + e.Message);
+                            Wait();
+                            throw e;
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Write("Could not instantiate SQLite connection: " + e.Message);
+                    Wait();
+                    throw e;
+
+                }
+
+            }
+
+
+            return _sysList;
         }
 
 #region Console Commands
