@@ -97,7 +97,7 @@ namespace edsm_to_sql
                 {
                     try
                     {
-                        command.CommandText = "CREATE TABLE systems (name VARCHAR(64), x DECIMAL,y DECIMAL,z DECIMAL);";
+                        command.CommandText = "CREATE TABLE systems (name VARCHAR(64) PRIMARY KEY ON CONFLICT REPLACE, x DECIMAL,y DECIMAL,z DECIMAL);";
                         command.ExecuteNonQuery();
                     }
                     catch (SQLiteException e)
