@@ -13,13 +13,13 @@ function drawData(logList, systemList, connectionList, maxSystemVisitCount, maxC
   var _USER_USE_IDENTICAL_SCALE = false;
     //Should the maxSystemVisitCount/maxConnectionVisitCount be overwritten?
   var _USER_OVERRIDE_MAX_COUNT = true;
-  var _USER_OVERRIDE_DEFINITIONS = {system:100,connection:10};
+  var _USER_OVERRIDE_DEFINITIONS = {system:50,connection:10};
 
   // Should point/line size be affected by times visited?
   var _USER_VISIT_AFFECT_POINT_SIZE = true;
   var _USER_VISIT_AFFECT_LINE_SIZE = true;
     // Min/max point/line size (default is used if _USER_VISIT_AFFECT_LINE/POINT_SIZE is set to "false")
-  var _SIZE_DEFINITIONS = {point:{min:2,max:10,default:5},line:{min:1,max:5,default:2}};
+  var _SIZE_DEFINITIONS = {point:{min:2,max:5,default:3},line:{min:1,max:10,default:2}};
 
     // Color values (in hexdec) for maximum and minimum values
   var _COLOR_DEFINITIONS = {min:"#a30000",max:"#00ff00"};
@@ -135,13 +135,13 @@ else if(typeof maxConnectionVisitCount !== "number"){
      let _scale = chroma.scale([_COLOR_DEFINITIONS.min,_COLOR_DEFINITIONS.max]).mode("lrgb");
     if(isPoint){
       //Point handling
-      let fraction = ((count-1 / maxSystemVisitCount-1) > 1) ? 1 : (count-1/maxSystemVisitCount-1);
-      console.log(fraction);
+      let fraction = (((count-1 / maxSystemVisitCount-1)*0.1) > 1) ? 1 : ((count-1/maxSystemVisitCount-1)*0.1);
+      console.log(fraction,count-1,maxSystemVisitCount);
       return _scale(fraction).hex();
     }
     else{
       //Line handling
-      let fraction = ((count-1 / maxConnectionVisitCount-1) > 1) ? 1 : (count-1/maxConnectionVisitCount-1);
+      let fraction = (((count-1 / maxSystemVisitCount-1)*0.1) > 1) ? 1 : ((count-1/maxSystemVisitCount-1)*0.1);
       return _scale(fraction).hex();
     }
   }
@@ -155,7 +155,7 @@ else if(typeof maxConnectionVisitCount !== "number"){
       }
       else{
         //Get size depending on count / maxCount. if maxCount > count set fraction to 1
-        let fraction = ((count-1 / maxSystemVisitCount-1) > 1) ? 1 : (count-1/maxSystemVisitCount-1);
+        let fraction = (((count-1 / maxSystemVisitCount-1)*0.1) > 1) ? 1 : ((count-1/maxSystemVisitCount-1)*0.1);
         //Return min value + fraction to max value
         return _SIZE_DEFINITIONS.point.min+fraction*_SIZE_DEFINITIONS.point.max;
       }
@@ -168,7 +168,7 @@ else if(typeof maxConnectionVisitCount !== "number"){
       }
       else{
         //Get size depending in count / maxCount. if maxCount > count set fraction to 1
-        let fraction = ((count-1 / maxConnectionVisitCount-1) > 1) ? 1 : (count-1/maxConnectionVisitCount-1);
+        let fraction = (((count-1 / maxSystemVisitCount-1)*0.1) > 1) ? 1 : ((count-1/maxSystemVisitCount-1)*0.1);
         //Return min value + fraction to max value
         return _SIZE_DEFINITIONS.line.min+fraction*_SIZE_DEFINITIONS.point.max;
       }
@@ -179,7 +179,7 @@ else if(typeof maxConnectionVisitCount !== "number"){
 //Controls Setup
 var controls = new THREE.OrbitControls( camera );
 controls.enableDamping = true;
-controls.dampingFactor = 0.25;
+controls.dampingFactor = 1.5;
 controls.keys = {
   LEFT:65,UP:87,RIGHT:68,DOWN:83
 };
