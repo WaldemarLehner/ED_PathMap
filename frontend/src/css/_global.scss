@@ -2,3 +2,8 @@
 .transitionAll {
   @include transitionAll(.4s);
 }
+
+body {
+  background-color: $backgroundColor;
+  margin: 0;
+}
