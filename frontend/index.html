@@ -5,6 +5,8 @@
   <meta charset="UTF-8">
   <link rel="stylesheet" href="src/css/style.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <!-- Threejs graphics library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/96/three.min.js"></script>
   <script src="src/js/drawData.js"></script>
   <script src="src/js/prepareData.js"></script>
   <script src="src/js/frontend.js"></script>
@@ -18,12 +20,18 @@
   </div>
   <div class="content">
     <div id="settings">
-      <form enctype="multipart/form-data">
-        <input type="file" id="fileinput"  accept=".json,application/json" />
+      
+        <label for="log">Travellog</label>
+        <input type="file" id="fileinput_travellog" name="log"  accept=".json,application/json" />
+        <label for="sysMap">Systemmap</label>
+        <input type="file" id="fileinput_sysmap" name="sysMap"  accept=".json,application/json" />
+        <button id="fileinput">Start</button>
 
-      </form>
     </div>
-    <div id="3d_container" class="hidden"></div>
+    <div id="3d_container" class="hidden">
+      <canvas id="3DApplication"></canvas>
+
+    </div>
   </div>
 </body>
 
