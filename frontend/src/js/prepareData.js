@@ -57,14 +57,17 @@ function filterData(json_data,json_syslist){
   var syslist = [];
   //SysConnections is an object of all connections between two systems
   var sysconnections = [];
-
+  //Count max visits per system/connection
+  var sysMaxCount = 0;
+  var conMaxCount = 0;
 
   //Generate a syslist object
   json_syslist.forEach(function(entry){
     var system = {
         x:entry.Coords.X,
         y:entry.Coords.Y,
-        z:entry.Coords.Z
+        z:entry.Coords.Z,
+        name: entry.Name
       };
     system.count = 0;
     syslist[entry.Name] = system;
@@ -75,6 +78,9 @@ function filterData(json_data,json_syslist){
     syslog.push({name:entry.system,date:entry.date});
     if(typeof syslist[entry.system] !== "undefined"){
       syslist[entry.system].count++;
+      if(syslist[entry.system].count > sysMaxCount){
+        sysMaxCount = syslist[entry.system].count;
+      }
     }
   });
   //console.log(syslist);
@@ -116,13 +122,13 @@ function filterData(json_data,json_syslist){
       else{
         sysconnections[name].tosys1count++;
       }
+
+      if(sysconnections[name].tosys1count+sysconnections[name].tosys2count > conMaxCount){
+        conMaxCount = sysconnections[name].tosys1count+sysconnections[name].tosys2count;
+      }
     }
 
   }
-
-//console.log(sysconnections);
-
-
-
-
+//Send prepared data over to drawData.js for map generation.
+  drawData(syslog,syslist,sysconnections,sysMaxCount,conMaxCount);
 }
