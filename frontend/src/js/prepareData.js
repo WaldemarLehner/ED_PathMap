@@ -6,74 +6,129 @@ Requires jQuery
 
 //eventListeners
 $(document).ready(function(){
-  $("#fileinput").on("change",importFile);
+  $("#fileinput").on("click",importFile);
+
 });
 
 
 function importFile(){
-  let file = document.getElementById("fileinput").files[0];
-  if(file === undefined || file === null){
+
+  let file_log = document.getElementById("fileinput_travellog").files[0];
+  let file_syslist = document.getElementById("fileinput_sysmap").files[0];
+  if(file_log === undefined || file_log === null){
     UI.createError("No file has been selected.",1000);
     return undefined; //cancel operation
   }
-  if(file.type != "application/json"){
+  if(file_log.type != "application/json"){
     UI.createError("Selected file is not in JSON format.",1000);
     return undefined;
   }
-  let filereader = new FileReader();
-  filereader.onload = function(event){
-    filterData(JSON.parse(event.srcElement.result));
+
+  if(file_syslist === undefined || file_syslist === null){
+    UI.createError("No file has been selected.",1000);
+    return undefined; //cancel operation
+  }
+  if(file_syslist.type != "application/json"){
+    UI.createError("Selected file is not in JSON format.",1000);
+    return undefined;
+  }
+
+  let filereader_logs = new FileReader();
+  let filereader_syslist = new FileReader();
+  filereader_logs.onload = function(event_logs){
+
+    filereader_syslist.onload = function(event_syslist){
+
+      filterData(JSON.parse(event_logs.srcElement.result).logs.reverse(),JSON.parse(event_syslist.srcElement.result));
+    };
+    filereader_syslist.readAsText(file_syslist);
+
   };
-  filereader.readAsText(file);
+  filereader_logs.readAsText(file_log);
+
 
 
 }
 
-function filterData(json_data){
+function filterData(json_data,json_syslist){
+  //SysLog is the travel log described in the get-logs.json
+  var syslog = [];
+  //SysList is an object of all needed systems with x y z and the amount of travels through said system
+  var syslist = [];
+  //SysConnections is an object of all connections between two systems
+  var sysconnections = [];
+  //Count max visits per system/connection
+  var sysMaxCount = 0;
+  var conMaxCount = 0;
 
-  let length = json_data.logs.length; // For Progress
-  if(length < 1){
-    UI.createError("Given file has no Systems",1000);
+  //Generate a syslist object
+  json_syslist.forEach(function(entry){
+    var system = {
+        x:entry.Coords.X,
+        y:entry.Coords.Y,
+        z:entry.Coords.Z,
+        name: entry.Name
+      };
+    system.count = 0;
+    syslist[entry.Name] = system;
+  });
+
+  //Filter out unnecessary data from log and get system count data
+  json_data.forEach(function(entry){
+    syslog.push({name:entry.system,date:entry.date});
+    if(typeof syslist[entry.system] !== "undefined"){
+      syslist[entry.system].count++;
+      if(syslist[entry.system].count > sysMaxCount){
+        sysMaxCount = syslist[entry.system].count;
+      }
+    }
+  });
+  //console.log(syslist);
+
+  //Generate a list of all connections
+  for(let i = 0; i < syslog.length-1;i++){
+    let system1 = syslog[i].name;
+    let system2 = syslog[i+1].name;
+    var name;
+    var object = {};
+    if(system1 < system2){
+      name = system1+":"+system2;
+    }
+    else{
+      name = system2+":"+system1;
+    }
+    //Connection has not been defined yet. time to define it;
+    if(typeof sysconnections[name] === "undefined"){
+      if(system1 < system2){
+        //The comparatively "smaller" string is sys1
+        object.sys1 = system1;
+        object.sys2 = system2;
+        object.tosys2count = 1;
+        object.tosys1count = 0;
+      }
+      else{
+        object.sys1 = system2;
+        object.sys2 = system1;
+        object.tosys2count = 0;
+        object.tosys1count = 1;
+      }
+      //Add connection to list
+      sysconnections[name] = object;
+    }
+    else{
+      if(system1 < system2){
+        sysconnections[name].tosys2count++;
+      }
+      else{
+        sysconnections[name].tosys1count++;
+      }
+
+      if(sysconnections[name].tosys1count+sysconnections[name].tosys2count > conMaxCount){
+        conMaxCount = sysconnections[name].tosys1count+sysconnections[name].tosys2count;
+      }
+    }
+
   }
-  let json_unfiltered = json_data.logs;
-  //Check a random system to see if format is good
-  let index = Math.floor(( Math.random() * length) - 1 );
-  //console.log(json_unfiltered[index]);
-  let testsystem = json_unfiltered[index];
-  /* Entry has: (* are required)
-    > shipId
-    > system*
-    > firstDiscover*
-    > date*
-  */
-  if( typeof testsystem.system === "undefined" || typeof testsystem.date === "undefined" ||typeof testsystem.firstDiscover === "undefined"){
-    UI.createError("It seems like you are using a wrong file. Please contact the dev or submit a ticket.",3000);
-    return undefined;
-  }
-  //A system map that holds the System name as index and the x y z coords as values. Gets x y z coords from EDSM API.
-  var systemMap = {};
-  //Create a filtered list
-  var json_filtered = [];
-  for(let i = 0;i < length; i++){
-    json_filtered[i] = {
-      system: json_unfiltered[i].system,
-      firstDiscover: json_unfiltered[i].firstDiscover,
-      date: json_unfiltered[i].date
-    };
-    systemMap[json_unfiltered[i].system] = {};
-
-  }
-  //Flip array so that first entry is at the begining.
-  json_filtered.reverse();
-  console.log("%c System History","color:#bada55");
-  console.log(json_filtered);
-  console.log("%c Unique systems only","color:#bada55");
-  console.log(systemMap);
-  console.log("length: "+Object.keys(systemMap).length);
-  //Construct POST Query
-
-
-
-
-
+//Send prepared data over to drawData.js for map generation.
+  drawData(syslog,syslist,sysconnections,sysMaxCount,conMaxCount);
 }
