@@ -88,7 +88,7 @@ else if(typeof maxConnectionVisitCount !== "number"){
     try{
       //skip loop if property is from prototype
       if(!connectionList.hasOwnProperty(entry)){continue;}
-      var material = new THREE.LineBasicMaterial({color:getColorByCount(connectionList[entry].tosys1count+connectionList[entry].tosys2count),linewidth:getSizeByCount(connectionList[entry].tosys1count+connectionList[entry].tosys2count),transparent:true,opacity:0.7});
+      var material = getMaterialByCount(connectionList[entry].tosys1count+connectionList[entry].tosys2count,false);
       var geometry = new THREE.Geometry();
       var system1 = systemList[connectionList[entry].sys1];
       //console.log(systemList);
@@ -113,8 +113,7 @@ else if(typeof maxConnectionVisitCount !== "number"){
 
     //skip loop if property is from prototype
       if(!systemList.hasOwnProperty(entry)){ console.warn(entry);continue; }
-
-      var material = new THREE.PointsMaterial({color: getColorByCount(systemList[entry].count,true),size: getSizeByCount(systemList[entry].count,true)});
+      var material = getMaterialByCount(systemList[entry].count,true);
       var geometry = new THREE.Geometry();
       geometry.vertices.push(new THREE.Vector3(
         systemList[entry].x,
@@ -130,48 +129,33 @@ else if(typeof maxConnectionVisitCount !== "number"){
 
 //#endregion
 //#region Color/Size Calculations
-//                                \/-- Differentiate between point and line
-  function getColorByCount(count,isPoint){
-     let _scale = chroma.scale([_COLOR_DEFINITIONS.min,_COLOR_DEFINITIONS.max]).mode("lrgb");
+  function getMaterialByCount(count,isPoint){
+    let _scale = chroma.scale([_COLOR_DEFINITIONS.min,_COLOR_DEFINITIONS.max]).mode("lrgb");
     if(isPoint){
       //Point handling
       let fraction = (((count-1 / maxSystemVisitCount-1)*0.1) > 1) ? 1 : ((count-1/maxSystemVisitCount-1)*0.1);
-      console.log(fraction,count-1,maxSystemVisitCount);
-      return _scale(fraction).hex();
+      let color = _scale(fraction).hex();
+      let size;
+      if(_USER_VISIT_AFFECT_POINT_SIZE){
+        size = _SIZE_DEFINITIONS.point.min + fraction * _SIZE_DEFINITIONS.point.max;
+      }
+      else{
+        size = _SIZE_DEFINITIONS.point.default;
+      }
+      return new THREE.PointsMaterial({color:color,size:size});
     }
     else{
       //Line handling
-      let fraction = (((count-1 / maxSystemVisitCount-1)*0.1) > 1) ? 1 : ((count-1/maxSystemVisitCount-1)*0.1);
-      return _scale(fraction).hex();
-    }
-  }
-//                                \/-- Differentiate between point and line
-  function getSizeByCount(count,isPoint){
-    if(isPoint){
-      //Point handling
-      //Visit count affecting size is disabled. Set Size to default value
-      if(!_USER_VISIT_AFFECT_POINT_SIZE){
-        return _SIZE_DEFINITIONS.point.default;
+      let fraction = (((count-1 / maxConnectionVisitCount-1)*0.1) > 1) ? 1 : ((count-1/maxConnectionVisitCount-1)*0.1);
+      let color = _scale(fraction).hex();
+      let size;
+      if(_USER_VISIT_AFFECT_LINE_SIZE){
+        size = _SIZE_DEFINITIONS.line.min + fraction * _SIZE_DEFINITIONS.line.max;
       }
       else{
-        //Get size depending on count / maxCount. if maxCount > count set fraction to 1
-        let fraction = (((count-1 / maxSystemVisitCount-1)*0.1) > 1) ? 1 : ((count-1/maxSystemVisitCount-1)*0.1);
-        //Return min value + fraction to max value
-        return _SIZE_DEFINITIONS.point.min+fraction*_SIZE_DEFINITIONS.point.max;
+        size = _SIZE_DEFINITIONS.line.default;
       }
-    }
-    else{
-      //Line Handling
-      //Visit count affecting size is disabled. Set Size to default value.
-      if(!_USER_VISIT_AFFECT_LINE_SIZE){
-        return _SIZE_DEFINITIONS.line.default;
-      }
-      else{
-        //Get size depending in count / maxCount. if maxCount > count set fraction to 1
-        let fraction = (((count-1 / maxSystemVisitCount-1)*0.1) > 1) ? 1 : ((count-1/maxSystemVisitCount-1)*0.1);
-        //Return min value + fraction to max value
-        return _SIZE_DEFINITIONS.line.min+fraction*_SIZE_DEFINITIONS.point.max;
-      }
+      return new THREE.LineBasicMaterial({color:color,linewidth:size,opacity:0.5+(fraction/2),transparent:true});
     }
   }
 //#endregion
