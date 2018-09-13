@@ -189,7 +189,9 @@ scene_skybox.add(new THREE.AmbientLight(0xFFFFFF,0.3));
 //#endregion
 //#region Controls
 //Controls Setup
-let controls = new THREE.OrbitControls( camera );
+let controls = new THREE.TrackballControls( camera );
+controls.minDistance = 10;
+controls.maxDistance = 10000;
 controls.enableDamping = true;
 controls.dampingFactor = 1.5;
 controls.keys = {
