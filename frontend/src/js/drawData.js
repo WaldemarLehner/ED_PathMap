@@ -189,14 +189,11 @@ scene_skybox.add(new THREE.AmbientLight(0xFFFFFF,0.3));
 //#endregion
 //#region Controls
 //Controls Setup
-let controls = new THREE.TrackballControls( camera );
+controls = new THREE.EDControls( camera );
 controls.minDistance = 10;
 controls.maxDistance = 10000;
 controls.enableDamping = true;
 controls.dampingFactor = 1.5;
-controls.keys = {
-  LEFT:65,UP:87,RIGHT:68,DOWN:83
-};
 console.log(controls);
 //#endregion
 
@@ -214,7 +211,7 @@ function animate(){
 }
 function update(){
   skybox.position.set(camera.position.x,camera.position.y,camera.position.z) ;
-  console.log(camera.position);
+  //console.log(camera.position);
 }
 animate();
 //#endregion
