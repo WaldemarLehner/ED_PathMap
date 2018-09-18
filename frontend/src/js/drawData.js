@@ -196,7 +196,7 @@ controls.enableDamping = true;
 controls.dampingFactor = 1.5;
 console.log(controls);
 //#endregion
-
+camera.lookAt(new THREE.Vector3(20,100,200));
 //#region animation loop at the end of loading
 function animate(){
   requestAnimationFrame(animate);
