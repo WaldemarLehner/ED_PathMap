@@ -1,4 +1,4 @@
-THREE.EDControls = function(camera) {
+THREE.EDControls = function(camera,scene) {
 	if (!(this instanceof THREE.EDControls)) {
 		return new THREE.EDControls(camera);
 	}
@@ -18,6 +18,7 @@ THREE.EDControls = function(camera) {
 		zoomIn: 88, //X
 		zoomOut: 89 //Y
 	};
+	this.usePanningMarkers = true;
 	this.minDistance = 10; //:float
 	this.maxDistance = 10000; //:float
 	this.keySpeed = {
@@ -46,6 +47,7 @@ THREE.EDControls = function(camera) {
 	var _currentPosition = new THREE.Vector3();
 	var _currentCameraRotation = new THREE.Euler();
 	var _camera = camera; //:THREE.Camera
+	var _indicatorGroup;
 	var _distanceToTarget = 0; //:float
 	var _dPosition_actual = new THREE.Vector3(); //:THREE.Vector3
 	var _dPosition_desired = new THREE.Vector3(); //:THREE.Vector3
@@ -68,8 +70,32 @@ THREE.EDControls = function(camera) {
 		rotateUp: false,
 		rotateDown: false
 	};
+	var _ui = {};
 	//#endregion
+	//#region Setup
+	//Set up indicator
+	initIndicator();
+	function initIndicator(){
+		let plane_material_data = [
+			new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("src/img/ui/focus/arrow_pan.png"),color:0xFFFFFF,side: THREE.DoubleSide,transparent:true,premultipliedAlpha:true}),
+			new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("src/img/ui/focus/arrow_vertical.png"),color:0xFFFFFF,side: THREE.DoubleSide,transparent:true,premultipliedAlpha:true}),
+			new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("src/img/ui/focus/focus_circle.png"),color:0xFFFFFF,side: THREE.DoubleSide,transparent:true,premultipliedAlpha:true})
+		];
+		_indicatorGroup = new THREE.Group();
+		let plane_circle = new THREE.Mesh(new THREE.PlaneGeometry(10,10),plane_material_data[2]);
+		plane_circle.rotateX(Math.PI/2);
+		let plane_arrow_pan = new THREE.Mesh(new THREE.PlaneGeometry(10,10),plane_material_data[0]);
+		plane_arrow_pan.rotateX(Math.PI/2);
+		let plane_arrow_vert = new THREE.Mesh(new THREE.PlaneGeometry(10,10), plane_material_data[1]);
+		_indicatorGroup.add(plane_circle);
+		_indicatorGroup.add(plane_arrow_pan);
+		_indicatorGroup.add(plane_arrow_vert);
+		_ui.focus = {circle: _indicatorGroup.children[0], arrow_pan: _indicatorGroup.children[1], arrow_vert: _indicatorGroup.children[2]};
+		scene.add(_indicatorGroup);
 
+	}
+
+	//#endregion
 	//#region Listeners
 	window.addEventListener("keydown", function(e) {
 		onkeyDown(e.keyCode);
@@ -162,6 +188,7 @@ THREE.EDControls = function(camera) {
 	//#endregion
 	//#region Camera setting
 	_camera.eulerOrder = "YXZ";
+	//#endregion
 	//#region Update
 	this.update = function() {
 		if (!_this.enabled) {
@@ -173,8 +200,6 @@ THREE.EDControls = function(camera) {
 		if (dTime > 1000) {
 			return; /*do nothing*/
 		}
-
-
 
 		//#region Key Functionality [Rotation]
 		_dAngle_desired = new THREE.Euler();
@@ -222,9 +247,9 @@ THREE.EDControls = function(camera) {
 		}
 		if (!(_areKeysPressed.left && _areKeysPressed.right)) {
 			if (_areKeysPressed.left) {
-				vector_raw.x++;
-			} else if (_areKeysPressed.right) {
 				vector_raw.x--;
+			} else if (_areKeysPressed.right) {
+				vector_raw.x++;
 			}
 		}
 		if (!(_areKeysPressed.up && _areKeysPressed.down)) {
@@ -264,7 +289,23 @@ THREE.EDControls = function(camera) {
 			_dZoom_actual = 0;
 		}
 		//#endregion
-
+		//#region UI
+		_indicatorGroup.position.set(_target.x,_target.y,_target.z);
+		_ui.focus.arrow_vert.rotation.setFromQuaternion(_camera.quaternion,"YXZ");
+		_ui.focus.arrow_vert.rotation.x = 0;
+		if(_dPosition_actual.x === 0 && _dPosition_actual.z === 0 && _dAngle_actual.y === 0){
+			_ui.focus.arrow_pan.visible = false;
+		}
+		else{
+			_ui.focus.arrow_pan.visible = true;
+		}
+		if(_dPosition_actual.y === 0){
+			_ui.focus.arrow_vert.visible = false;
+		}
+		else{
+			_ui.focus.arrow_vert.visible = true;
+		}
+		//#endregion
 
 		//#endregion
 

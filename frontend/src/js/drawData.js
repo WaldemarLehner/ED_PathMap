@@ -189,7 +189,7 @@ scene_skybox.add(new THREE.AmbientLight(0xFFFFFF,0.3));
 //#endregion
 //#region Controls
 //Controls Setup
-controls = new THREE.EDControls( camera );
+controls = new THREE.EDControls( camera , scene_main);
 controls.minDistance = 10;
 controls.maxDistance = 10000;
 controls.enableDamping = true;
