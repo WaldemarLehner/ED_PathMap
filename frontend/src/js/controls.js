@@ -1,7 +1,3 @@
-/*
- * @author Waldemar Lehner
- */
-
 THREE.EDControls = function(camera) {
 	if (!(this instanceof THREE.EDControls)) {
 		return new THREE.EDControls(camera);
@@ -17,15 +13,16 @@ THREE.EDControls = function(camera) {
 		down: 70, //F
 		rotateRight: 69, //E
 		rotateLeft: 81, //Q
+		rotateUp:84,	//T
+		rotateDown:71,	//G
 		zoomIn: 88, //X
 		zoomOut: 89 //Y
 	};
 	this.minDistance = 10; //:float
 	this.maxDistance = 10000; //:float
-	this.dampingFactor = 0.3; //:float
 	this.keySpeed = {
 		pan: 100, //:float | lyr/second
-		rotate: 45, //:float | degrees / second
+		rotate: 10 * Math.PI / 180, //:float | degrees / second
 		zoom: 100 //:float | delta_distance to focus / second
 	};
 	this.keySpeedScale = true; //:boolean
@@ -34,7 +31,7 @@ THREE.EDControls = function(camera) {
 	this.blockZoom = false; //:boolean
 	this.blockRotation = false; //:boolean
 	this.blockPan = false; //:boolean
-	this.timeToMaxKeySpeed = 500; //:number in Milliseconds
+	this.timeToMaxKeySpeed = 1000; //:number in Milliseconds
 	this.focusAt = function(_vector3_, _distance_, _angle_) { //:THREE.Vector3; :float; :THREE.Quaternion
 		//#region "focusAt" logic
 		//#endregion
@@ -49,11 +46,14 @@ THREE.EDControls = function(camera) {
 	var _currentPosition = new THREE.Vector3();
 	var _currentCameraRotation = new THREE.Euler();
 	var _camera = camera; //:THREE.Camera
-	var _distanceCameraFocus; //:float
+	var _distanceToTarget = 0; //:float
 	var _dPosition_actual = new THREE.Vector3(); //:THREE.Vector3
 	var _dPosition_desired = new THREE.Vector3(); //:THREE.Vector3
+	var _angleCameraWorld = 0; //:float
 	var _dAngle_actual = new THREE.Euler();
-	var _dAngle_desired = new THREE.Euler(); //:THREE.Vector2
+	var _dAngle_desired = new THREE.Euler();
+	var _dZoom_actual = 0;
+	var _dZoom_desired = 0;
 	var _oldTime = Date.now(); //:int
 	var _newTime = Date.now(); //:int
 	var _areKeysPressed = {
@@ -64,7 +64,9 @@ THREE.EDControls = function(camera) {
 		front: false,
 		back: false,
 		zoomIn: false,
-		zoomOut: false
+		zoomOut: false,
+		rotateUp: false,
+		rotateDown: false
 	};
 	//#endregion
 
@@ -100,6 +102,17 @@ THREE.EDControls = function(camera) {
 		} else if (_this.keys.zoomOut === code) {
 			_areKeysPressed.zoomOut = true;
 
+		} else if (_this.keys.rotateLeft === code){
+			_areKeysPressed.rotateLeft = true;
+
+		} else if (_this.keys.rotateRight === code){
+			_areKeysPressed.rotateRight = true;
+
+		} else if (_this.keys.rotateUp === code){
+			_areKeysPressed.rotateUp = true;
+
+		} else if (_this.keys.rotateDown === code){
+			_areKeysPressed.rotateDown = true;
 		}
 	}
 	window.addEventListener("keyup", function(e) {
@@ -132,21 +145,69 @@ THREE.EDControls = function(camera) {
 		} else if (_this.keys.zoomOut === code) {
 			_areKeysPressed.zoomOut = false;
 
+		} else if (_this.keys.rotateLeft === code){
+			_areKeysPressed.rotateLeft = false;
+
+		} else if (_this.keys.rotateRight === code){
+			_areKeysPressed.rotateRight = false;
+
+		} else if (_this.keys.rotateUp === code){
+			_areKeysPressed.rotateUp = false;
+
+		} else if (_this.keys.rotateDown === code){
+			_areKeysPressed.rotateDown = false;
 		}
 	}
 
 	//#endregion
+	//#region Camera setting
+	_camera.eulerOrder = "YXZ";
 	//#region Update
 	this.update = function() {
-		if(!_this.enabled){return;}
+		if (!_this.enabled) {
+			return;
+		}
 		_oldTime = _newTime;
 		_newTime = Date.now();
 		let dTime = _newTime - _oldTime;
 		if (dTime > 1000) {
 			return; /*do nothing*/
 		}
-		console.log(dTime);
 
+
+
+		//#region Key Functionality [Rotation]
+		_dAngle_desired = new THREE.Euler();
+		let z = 0.2;
+		if(!(_areKeysPressed.rotateDown && _areKeysPressed.rotateUp)){
+			if(_areKeysPressed.rotateDown){
+				_dAngle_desired.x-=z;
+			}
+			else if(_areKeysPressed.rotateUp){
+				_dAngle_desired.x+=z;
+			}
+		}
+		if(!(_areKeysPressed.rotateLeft && _areKeysPressed.rotateRight)){
+			if(_areKeysPressed.rotateRight){
+				_dAngle_desired.y-=z;
+			}
+			else if (_areKeysPressed.rotateLeft){
+				_dAngle_desired.y+=z;
+			}
+		}
+		calculateCurrentDeltaRotation((dTime/_this.timeToMaxKeySpeed)*_this.keySpeed.rotate);
+		_currentCameraRotation.set(_dAngle_actual.x+_currentCameraRotation.x,_dAngle_actual.y+_currentCameraRotation.y,_dAngle_actual.z+_currentCameraRotation.z);
+		console.log(_currentCameraRotation);
+		if(_currentCameraRotation.x > 1.4){
+			_currentCameraRotation.x = 1.4;
+			_dAngle_actual.x = 0;
+		}
+		else if(_currentCameraRotation.x < -1.4){
+			_currentCameraRotation.x = -1.4;
+			_dAngle_actual.x = 0;
+		}
+
+		//#endregion
 		//#region Key Functionality [Moving]
 		//Set up the vector for transforming the focus position without applying camera rotation yet;
 		let vector_raw = new THREE.Vector3();
@@ -154,16 +215,16 @@ THREE.EDControls = function(camera) {
 
 		if (!(_areKeysPressed.front && _areKeysPressed.back)) {
 			if (_areKeysPressed.front) {
-				vector_raw.z++;
-			} else if (_areKeysPressed.back) {
 				vector_raw.z--;
+			} else if (_areKeysPressed.back) {
+				vector_raw.z++;
 			}
 		}
 		if (!(_areKeysPressed.left && _areKeysPressed.right)) {
 			if (_areKeysPressed.left) {
-				vector_raw.x--;
-			} else if (_areKeysPressed.right) {
 				vector_raw.x++;
+			} else if (_areKeysPressed.right) {
+				vector_raw.x--;
 			}
 		}
 		if (!(_areKeysPressed.up && _areKeysPressed.down)) {
@@ -177,74 +238,159 @@ THREE.EDControls = function(camera) {
 		//Normalize Vector so that going (for example) front-right is not faster than just front and set it to max speed.
 		//Normalizing gives the vector a length of 1 unit;
 		_dPosition_desired = vector_raw.normalize().multiplyScalar(_this.keySpeed.pan);
-		console.log("Gewünscht:");
-		console.log(_dPosition_desired);
+		//console.log(_distanceToTarget);
+		let pan_vector = calculateCurrentDeltaAnkerPosition((dTime / _this.timeToMaxKeySpeed) * _this.keySpeed.pan);
+		_target.add(pan_vector);
 
-
-
-		console.log("Tatsächlich:");
-		_target.add(calculateCurrentDeltaAnkerPosition((dTime/_this.timeToMaxKeySpeed) * _this.keySpeed.pan));
-		console.log(_target);
-		//console.log(calculateCurrentDeltaAnkerPosition(20));
 		//#endregion
-		//Apply camera rotation around the vertical axis to the vector so when you press "forward" it doesnt go +x but actually where the camera is pointing at.
-		//camera rotation  :  x → pitch // y → yaw (positive = turns left) //z → roll
-		/*
-		if(_camera.rotation.y !== 0){
-
-			//get angle to rotate
-			let angle = new THREE.Vector3(_camera.rotation.x,0,_camera.rotation.z).angleTo(new THREE.Vector3(0,0,1));
-			//rotate vector around y axis
-
-			let vector_rotated = _dPosition_actual.applyAxisAngle(new THREE.Vector3(0,1,0),angle);
-			//console.log(vector_rotated);
-		}*/
+		//#region Key Functionality [Zooming]
+		_dZoom_desired = 0;
+		if (!(_areKeysPressed.zoomIn && _areKeysPressed.zoomOut)) {
+			if(_areKeysPressed.zoomIn){
+				_dZoom_desired = -(_this.keySpeed.zoom);
+			}
+			else if(_areKeysPressed.zoomOut){
+				_dZoom_desired = _this.keySpeed.zoom;
+			}
+		}
+		_distanceToTarget += calculateCurrentDeltaZoom((dTime/_this.timeToMaxKeySpeed) * _this.keySpeed.zoom);
+		//Clamp value
+		if(_distanceToTarget > _this.maxDistance){
+			_distanceToTarget = _this.maxDistance;
+			_dZoom_actual = 0;
+		}
+		else if(_distanceToTarget < _this.minDistance){
+			_distanceToTarget = _this.minDistance;
+			_dZoom_actual = 0;
+		}
 		//#endregion
 
-		//console.log(vector_raw.x,vector_raw.y,vector_raw.z);
+
+		//#endregion
+
+
 		//Update camera position/rotation;
-		//transformCamera();
+		transformCamera();
 	};
-	//#endregion
 	//#region Pan Smoothing
-	function calculateCurrentDeltaAnkerPosition(v){
+	function calculateCurrentDeltaAnkerPosition(v) {
 		let a = [
-			[_dPosition_actual.x,_dPosition_desired.x],
-			[_dPosition_actual.y,_dPosition_desired.y],
-			[_dPosition_actual.z,_dPosition_desired.z]
+			[_dPosition_actual.x, _dPosition_desired.x],
+			[_dPosition_actual.y, _dPosition_desired.y],
+			[_dPosition_actual.z, _dPosition_desired.z]
 		];
-		let b = [];
-		for(let i = 0;i < 3;i++){
+
+		for (let i = 0; i < 3; i++) {
 			//Skip is actual === desired value
-			if(a[i][0] === a[i][1]){
-				continue;}
+			if (a[i][0] === a[i][1]) {
+				continue;
+			}
 			//Actual is bigger than desired. Reduce value by v;
-			if(a[i][0] > a[i][1]){
-				a[i][0] = Math.round((a[i][0]-v)*10)/10;
-				if(a[i][0] < a[i][1]){
+			if (a[i][0] > a[i][1]) {
+				a[i][0] = Math.round((a[i][0] - v) * 1000) / 1000;
+				if (a[i][0] < a[i][1]) {
 					a[i][0] = a[i][1];
 				}
 			}
 			//Actual is smaller than desired. Increase value by v;
-			else if(a[i][0] < a[i][1]){
-				a[i][0] = Math.round((a[i][0]+v)*10)/10;
+			else if (a[i][0] < a[i][1]) {
+				a[i][0] = Math.round((a[i][0] + v) * 1000) / 1000;
 			}
 		}
-		_dPosition_actual = new THREE.Vector3(a[0][0],a[1][0],a[2][0]);
-		//update actual values.
-		return _dPosition_actual;
+
+		let vector = new THREE.Vector3(a[0][0], a[1][0], a[2][0]);
+		_dPosition_actual = vector;
+		let cameraLookAtAxis = new THREE.Vector3(0,0,-1).applyQuaternion(_camera.quaternion);
+
+		let angle = get2dAngle(cameraLookAtAxis.x,cameraLookAtAxis.z,0,-1);
+		//TODO: Create a working WASD movement
+
+		//Angle → cos(alpha) = (vA * vB)/(|vA|*|vB|)
+		return vector;//.applyAxisAngle(new THREE.Vector3(0,1,0),angle);
 	}
 	//#endregion
+	//#region Zoom Smoothing
+	function calculateCurrentDeltaZoom(v) {
+		let x = _dZoom_actual;
+		let _x = _dZoom_desired;
+		if (x === _x) {
+			return x;
+		}
+		if (x > _x) {
+			x = Math.round((x - v) * 1000) / 1000;
+			if (x < _x) {
+				x = _x;
+			}
+		} else {
+			x = Math.round((x + v) * 1000) / 1000;
+			if (x > _x) {
+				x = _x;
+			}
+		}
+		_dZoom_actual = x;
+		console.log(_dZoom_desired);
+		console.log(x);
+		return x;
+	}
+	//#endregion
+	//#region region Rotation Smoothing
+	function calculateCurrentDeltaRotation(v) {
+		let a = [
+			[_dAngle_actual.x, _dAngle_desired.x],
+			[_dAngle_actual.y, _dAngle_desired.y],
+			[_dAngle_actual.z, _dAngle_desired.z]
+		];
+		for (let i = 0; i < 3; i++) {
+			//Skip is actual === desired value
+			if (a[i][0] === a[i][1]) {
+				continue;
+			}
+			//Actual is bigger than desired. Reduce value by v;
+			if (a[i][0] > a[i][1]) {
+				a[i][0] = Math.round((a[i][0] - v) * 1000) / 1000;
+				if (a[i][0] < a[i][1]) {
+					a[i][0] = a[i][1];
+				}
+			}
+			//Actual is smaller than desired. Increase value by v;
+			else if (a[i][0] < a[i][1]) {
+				a[i][0] = Math.round((a[i][0] + v) * 1000) / 1000;
+			}
+		}
+		_dAngle_actual = new THREE.Euler(a[0][0], a[1][0], a[2][0]);
+		return _dAngle_actual;
+	}
+	//#endregion
+	function get2dAngle(x1,x2,y1,y2){
+		let atanX = Math.atan2(x1,x2);
+		let atanY = Math.atan2(y1,y2);
+
+		return atanX - atanY;
+	}
 	//#region Transform Camera
-	function transformCamera(){
+	function transformCamera() {
 		//camera rotation
+		if (needsCameraUpdate()) {
+			let cameraLookAtAxis = new THREE.Vector3(0,0,-1).applyQuaternion(_camera.quaternion);
+			_camera.position.set(_target.x+cameraLookAtAxis.x*_distanceToTarget*-1, _target.y+cameraLookAtAxis.y*_distanceToTarget*-1, _target.z+cameraLookAtAxis.z*_distanceToTarget*-1);
+			_camera.rotation.set(_currentCameraRotation.x, _currentCameraRotation.y, _currentCameraRotation.z);
 
-		_camera.rotation = _currentCameraRotation;
-		//camera position
-		let lookAtVector = new THREE.Vector3(); //TODO: generate normalized look At Vector
-			//get camera lookat vector
-		_camera.position.addVectors(_target,lookAtVector.multiplyScalar(-(_distanceCameraFocus)));
-
+		}
+	}
+	function needsCameraUpdate() {
+		//[Panning]
+		if (_dPosition_actual.x !== 0 || _dPosition_actual.y !== 0 || _dPosition_actual.z !== 0 ){
+			return true;
+		}
+		//[Rotation]
+		if (_dAngle_actual.x !== 0 || _dAngle_actual.y !== 0 || _dAngle_actual.z !== 0 ){
+			return true;
+		}
+		//[Zoom]
+		if(_dZoom_actual !== 0){
+			return true;
+		}
+		return false;
 	}
 	//#endregion
 };

@@ -96,7 +96,7 @@ else if(typeof maxConnectionVisitCount !== "number"){
       let geometry = new THREE.BufferGeometry();
       let system1 = systemList[connectionList[entry].sys1];
       let system2 = systemList[connectionList[entry].sys2];
-      let vertices = new Float32Array([system1.x,system1.y,system1.z,system2.x,system2.y,system2.z]);
+      let vertices = new Float32Array([-system1.x,system1.y,system1.z,-system2.x,system2.y,system2.z]);
       geometry.addAttribute("position",new THREE.BufferAttribute(vertices,3));
       let object = new THREE.Line(geometry,material);
       object.name = entry;
@@ -117,7 +117,7 @@ else if(typeof maxConnectionVisitCount !== "number"){
       if(!systemList.hasOwnProperty(entry)){ console.warn(entry);continue; }
       let material = getMaterialByCount(systemList[entry].count,true);
       let geometry = new THREE.BufferGeometry();
-      let vertices = new Float32Array([systemList[entry].x,systemList[entry].y,systemList[entry].z]);
+      let vertices = new Float32Array([-systemList[entry].x,systemList[entry].y,systemList[entry].z]);
       geometry.addAttribute("position",new THREE.BufferAttribute(vertices,3));
       let object = new THREE.Points(geometry,material);
       object.name = systemList[entry].name;
@@ -196,7 +196,7 @@ controls.enableDamping = true;
 controls.dampingFactor = 1.5;
 console.log(controls);
 //#endregion
-camera.lookAt(new THREE.Vector3(20,100,200));
+camera.rotation = new THREE.Euler();
 //#region animation loop at the end of loading
 function animate(){
   requestAnimationFrame(animate);
