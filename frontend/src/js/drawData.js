@@ -174,16 +174,18 @@ else if(typeof maxConnectionVisitCount !== "number"){
 //#endregion
 //#region Skybox
 let skybox_material_data = [
-  new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("src/img/skybox/north.png"),side:THREE.DoubleSide}),
-  new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("src/img/skybox/south.png"),side:THREE.DoubleSide}),
-  new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("src/img/skybox/up.png"),side:THREE.DoubleSide}),
-  new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("src/img/skybox/down.png"),side:THREE.DoubleSide}),
-  new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("src/img/skybox/east.png"),side:THREE.DoubleSide}),
-  new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("src/img/skybox/west.png"),side:THREE.DoubleSide}),
+  new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("src/img/skybox/north.png"),side:THREE.BackSide}),
+  new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("src/img/skybox/south.png"),side:THREE.BackSide}),
+  new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("src/img/skybox/up.png"),side:THREE.BackSide}),
+  new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("src/img/skybox/down.png"),side:THREE.BackSide}),
+  new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("src/img/skybox/east.png"),side:THREE.BackSide}),
+  new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("src/img/skybox/west.png"),side:THREE.BackSide}),
 ];
 
 let skybox = new THREE.Mesh(new THREE.CubeGeometry(100000,100000,100000),skybox_material_data);
+skybox.rotation.set(0,-Math.PI/2,0);
 console.log(skybox_material_data);
+
 scene_skybox.add(skybox);
 scene_skybox.add(new THREE.AmbientLight(0xFFFFFF,0.3));
 //#endregion
