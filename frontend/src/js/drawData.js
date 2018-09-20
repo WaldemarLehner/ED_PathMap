@@ -96,7 +96,7 @@ else if(typeof maxConnectionVisitCount !== "number"){
       let geometry = new THREE.BufferGeometry();
       let system1 = systemList[connectionList[entry].sys1];
       let system2 = systemList[connectionList[entry].sys2];
-      let vertices = new Float32Array([system1.x,system1.y,system1.z,system2.x,system2.y,system2.z]);
+      let vertices = new Float32Array([-system1.x,system1.y,system1.z,-system2.x,system2.y,system2.z]);
       geometry.addAttribute("position",new THREE.BufferAttribute(vertices,3));
       let object = new THREE.Line(geometry,material);
       object.name = entry;
@@ -117,7 +117,7 @@ else if(typeof maxConnectionVisitCount !== "number"){
       if(!systemList.hasOwnProperty(entry)){ console.warn(entry);continue; }
       let material = getMaterialByCount(systemList[entry].count,true);
       let geometry = new THREE.BufferGeometry();
-      let vertices = new Float32Array([systemList[entry].x,systemList[entry].y,systemList[entry].z]);
+      let vertices = new Float32Array([-systemList[entry].x,systemList[entry].y,systemList[entry].z]);
       geometry.addAttribute("position",new THREE.BufferAttribute(vertices,3));
       let object = new THREE.Points(geometry,material);
       object.name = systemList[entry].name;
@@ -189,15 +189,14 @@ scene_skybox.add(new THREE.AmbientLight(0xFFFFFF,0.3));
 //#endregion
 //#region Controls
 //Controls Setup
-let controls = new THREE.OrbitControls( camera );
+controls = new THREE.EDControls( camera , scene_main);
+controls.minDistance = 10;
+controls.maxDistance = 10000;
 controls.enableDamping = true;
 controls.dampingFactor = 1.5;
-controls.keys = {
-  LEFT:65,UP:87,RIGHT:68,DOWN:83
-};
 console.log(controls);
 //#endregion
-
+camera.rotation = new THREE.Euler();
 //#region animation loop at the end of loading
 function animate(){
   requestAnimationFrame(animate);
@@ -212,7 +211,7 @@ function animate(){
 }
 function update(){
   skybox.position.set(camera.position.x,camera.position.y,camera.position.z) ;
-  console.log(camera.position);
+  //console.log(camera.position);
 }
 animate();
 //#endregion
