@@ -49,7 +49,7 @@ _connectionList = connectionList;
 //Settings up canvas end adding it to the HTML document
   var scene_skybox = new THREE.Scene();
   var scene_main = new THREE.Scene();
-  var camera = new THREE.PerspectiveCamera( 80, canvas_width/canvas_height,0.1,500000);
+  var camera = new THREE.PerspectiveCamera( 80, canvas_width/canvas_height,0.1,600000);
   camera.position.set(0.5,0.2,0.1);
   var renderer = new THREE.WebGLRenderer();
   renderer.autoClear = false;
@@ -182,12 +182,20 @@ let skybox_material_data = [
   new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("src/img/skybox/west.png"),side:THREE.BackSide}),
 ];
 
-let skybox = new THREE.Mesh(new THREE.CubeGeometry(100000,100000,100000),skybox_material_data);
+let skybox = new THREE.Mesh(new THREE.CubeGeometry(500000,500000,500000),skybox_material_data);
 skybox.rotation.set(0,-Math.PI/2,0);
 console.log(skybox_material_data);
 
 scene_skybox.add(skybox);
 scene_skybox.add(new THREE.AmbientLight(0xFFFFFF,0.3));
+//#endregion
+//#region Galactic Plane
+//Draw a galactic plane
+let galplane_material = new THREE.MeshBasicMaterial( {map: new THREE.TextureLoader().load("src/img/skybox/galplane.png"), side:THREE.DoubleSide,color:0xFFFFFF,transparent:true,opacity:0.8} );
+let galplane = new THREE.Mesh(new THREE.PlaneGeometry(100000,100000),galplane_material);
+galplane.rotation.set(Math.PI/2,0,0);
+galplane.position.set(0,0,26000);
+scene_skybox.add(galplane);
 //#endregion
 //#region Controls
 //Controls Setup
