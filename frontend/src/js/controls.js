@@ -83,9 +83,9 @@ THREE.EDControls = function(camera,scene) {
 		},
 		zoom:{
 			toDo: 0,
-			dZoom: 0,
-			dZoomMax: 50
-		}
+
+		},
+		needsUpdate:false
 	};
 	var _ui = {};
 	//#endregion
@@ -124,38 +124,61 @@ THREE.EDControls = function(camera,scene) {
 		onkeyUp(e.keyCode);
 	});
 	window.addEventListener("mousedown",function(e){
+		e.preventDefault();
 		onmouseDown(e.which);
 	});
 	window.addEventListener("mouseup",function(e){
+		e.preventDefault();
 		onmouseUp(e.which);
 	});
 	window.addEventListener("mousemove",function(e){
+		e.preventDefault();
 		onmouseMove(e);
 	});
 	function onmouseWheel(e){
 		_mouse.zoom.toDo += e;
-		console.log(_mouse.zoom.toDo);
+
 	}
 	//1: left click //2: middle click //3: right click
 	function onmouseDown(code){
 		if(code === 1){
-			_areKeysPressed.mouseLeft = true;
+			_mouse.isPressed.mouseLeft = true;
 		}
 		else if(code === 3){
-			_areKeysPressed.mouseRight = true;
+			_mouse.isPressed.mouseRight = true;
 		}
 	}
 	function onmouseUp(code){
 		if(code === 1){
-			_areKeysPressed.mouseLeft = false;
+			_mouse.isPressed.mouseLeft = false;
 		}
 		else if(code === 3){
-			_areKeysPressed.mouseRight = false;
+			_mouse.isPressed.mouseRight = false;
 		}
 	}
 	function onmouseMove(code){
 		// right → +x | down → +y
-		_mousePosition = new THREE.Vector2(code.clientX,window.innerHeight-code.clientY);
+		_mouse.position.now = new THREE.Vector2(code.clientX,window.innerHeight-code.clientY);
+
+		if(_mouse.isPressed.mouseLeft){
+			let v = 0.003;
+			let dAngleX;
+			let dAngleY;
+			let posA = _mouse.position.before;
+			let posB = _mouse.position.now;
+			let rot = _currentCameraRotation;
+
+			if(posA.x !== posB.x || posA.y !== posB.y){
+				//if posA !== posB
+				dAngleX = posB.x-posA.x;
+				dAngleY = posB.y-posA.y;
+				console.log(dAngleX,dAngleY);
+				rot.y += dAngleX*v;
+				rot.x += dAngleY*v;
+			}
+			_currentCameraRotation.set(rot.x,rot.y,rot.z);
+			_mouse.needsUpdate = true;
+		}
 		//console.log(_mousePosition);
 	}
 	function onkeyDown(code) {
@@ -253,7 +276,7 @@ THREE.EDControls = function(camera,scene) {
 		if (dTime > 1000) {
 			return; /*do nothing*/
 		}
-
+		//#region KEY FUNCTIONALITY
 		//#region Key Functionality [Rotation]
 		_dAngle_desired = new THREE.Euler();
 		let z = 0.2;
@@ -342,6 +365,27 @@ THREE.EDControls = function(camera,scene) {
 			_dZoom_actual = 0;
 		}
 		//#endregion
+		//#endregion
+		//#region MOUSE FUNCTIONALITY
+		//#region [Mouse] Zoom
+		if(_mouse.zoom.toDo !== 0){
+		_mouse.needsUpdate = true;
+		_distanceToTarget += _mouse.zoom.toDo;
+		_mouse.zoom.toDo = 0;
+	}
+		//#endregion
+
+
+
+		//#endregion
+		_mouse.position.before = _mouse.position.now;
+		//#endregion
+	//#region [Mouse] Rotation/Panning
+		function mouseMoveCamera(){
+
+
+	}
+	//#endregion
 		//#region UI
 		_indicatorGroup.position.set(_target.x,_target.y,_target.z);
 		_ui.focus.arrow_vert.rotation.setFromQuaternion(_camera.quaternion,"YXZ");
@@ -472,12 +516,17 @@ THREE.EDControls = function(camera,scene) {
 		}
 	}
 	function needsCameraUpdate() {
+
+		//[Mouse]
+		if(_mouse.needsUpdate){
+			return true;
+		}
 		//[Panning]
 		if (_dPosition_actual.x !== 0 || _dPosition_actual.y !== 0 || _dPosition_actual.z !== 0 ){
 			return true;
 		}
 		//[Rotation]
-		if (_dAngle_actual.x !== 0 || _dAngle_actual.y !== 0 || _dAngle_actual.z !== 0 ){
+		if (_dAngle_actual.x !== 0 || _dAngle_actual.y !== 0 || _dAngle_actual.z !== 0){
 			return true;
 		}
 		//[Zoom]
