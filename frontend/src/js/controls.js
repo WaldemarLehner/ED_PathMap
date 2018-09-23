@@ -32,7 +32,7 @@ THREE.EDControls = function(camera,scene) {
 	this.blockZoom = false; //:boolean
 	this.blockRotation = false; //:boolean
 	this.blockPan = false; //:boolean
-	this.timeToMaxKeySpeed = 1000; //:number in Milliseconds
+	this.timeToMaxKeySpeed = 500; //:number in Milliseconds
 	this.focusAt = function(_vector3_, _distance_, _angle_) { //:THREE.Vector3; :float; :THREE.Quaternion
 		//#region "focusAt" logic
 		//#endregion
@@ -56,6 +56,7 @@ THREE.EDControls = function(camera,scene) {
 	var _dAngle_desired = new THREE.Euler();
 	var _dZoom_actual = 0;
 	var _dZoom_desired = 0;
+	var _MouseWheelZoom = 0;
 	var _oldTime = Date.now(); //:int
 	var _newTime = Date.now(); //:int
 	var _areKeysPressed = {
@@ -69,6 +70,22 @@ THREE.EDControls = function(camera,scene) {
 		zoomOut: false,
 		rotateUp: false,
 		rotateDown: false
+	};
+	//Mouse Position at the beginning of a mouse movement
+	var _mouse = {
+		position : {
+			before: new THREE.Vector2(-1,-1),
+			now: new THREE.Vector2(-1,-1)
+		},
+		isPressed: {
+			mouseLeft:false,
+			mouseRight:false
+		},
+		zoom:{
+			toDo: 0,
+			dZoom: 0,
+			dZoomMax: 50
+		}
 	};
 	var _ui = {};
 	//#endregion
@@ -97,10 +114,50 @@ THREE.EDControls = function(camera,scene) {
 
 	//#endregion
 	//#region Listeners
+	window.addEventListener("wheel",function(e){
+		onmouseWheel(e.deltaY);
+	});
 	window.addEventListener("keydown", function(e) {
 		onkeyDown(e.keyCode);
 	});
-
+	window.addEventListener("keyup", function(e) {
+		onkeyUp(e.keyCode);
+	});
+	window.addEventListener("mousedown",function(e){
+		onmouseDown(e.which);
+	});
+	window.addEventListener("mouseup",function(e){
+		onmouseUp(e.which);
+	});
+	window.addEventListener("mousemove",function(e){
+		onmouseMove(e);
+	});
+	function onmouseWheel(e){
+		_mouse.zoom.toDo += e;
+		console.log(_mouse.zoom.toDo);
+	}
+	//1: left click //2: middle click //3: right click
+	function onmouseDown(code){
+		if(code === 1){
+			_areKeysPressed.mouseLeft = true;
+		}
+		else if(code === 3){
+			_areKeysPressed.mouseRight = true;
+		}
+	}
+	function onmouseUp(code){
+		if(code === 1){
+			_areKeysPressed.mouseLeft = false;
+		}
+		else if(code === 3){
+			_areKeysPressed.mouseRight = false;
+		}
+	}
+	function onmouseMove(code){
+		// right → +x | down → +y
+		_mousePosition = new THREE.Vector2(code.clientX,window.innerHeight-code.clientY);
+		//console.log(_mousePosition);
+	}
 	function onkeyDown(code) {
 
 
@@ -141,10 +198,6 @@ THREE.EDControls = function(camera,scene) {
 			_areKeysPressed.rotateDown = true;
 		}
 	}
-	window.addEventListener("keyup", function(e) {
-		onkeyUp(e.keyCode);
-	});
-
 	function onkeyUp(code) {
 
 		if (_this.keys.front === code) {
@@ -222,7 +275,7 @@ THREE.EDControls = function(camera,scene) {
 		}
 		calculateCurrentDeltaRotation((dTime/_this.timeToMaxKeySpeed)*_this.keySpeed.rotate);
 		_currentCameraRotation.set(_dAngle_actual.x+_currentCameraRotation.x,_dAngle_actual.y+_currentCameraRotation.y,_dAngle_actual.z+_currentCameraRotation.z);
-		console.log(_currentCameraRotation);
+		//console.log(_currentCameraRotation);
 		if(_currentCameraRotation.x > 1.4){
 			_currentCameraRotation.x = 1.4;
 			_dAngle_actual.x = 0;
@@ -369,8 +422,8 @@ THREE.EDControls = function(camera,scene) {
 			}
 		}
 		_dZoom_actual = x;
-		console.log(_dZoom_desired);
-		console.log(x);
+		//console.log(_dZoom_desired);
+		//console.log(x);
 		return x;
 	}
 	//#endregion
