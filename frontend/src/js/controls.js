@@ -51,6 +51,8 @@ THREE.EDControls = function(camera,scene) {
 	var _distanceToTarget = 0; //:float
 	var _dPosition_actual = new THREE.Vector3(); //:THREE.Vector3
 	var _dPosition_desired = new THREE.Vector3(); //:THREE.Vector3
+	var _dPosition_maxSpeed = 100; //ly/s
+	var _dPosition_multiplier = 0;
 	var _angleCameraWorld = 0; //:float
 	var _dAngle_actual = new THREE.Euler();
 	var _dAngle_desired = new THREE.Euler();
@@ -418,37 +420,38 @@ THREE.EDControls = function(camera,scene) {
 	};
 	//#region Pan Smoothing
 	function calculateCurrentDeltaAnkerPosition(v) {
-		let a = [
-			[_dPosition_actual.x, _dPosition_desired.x],
-			[_dPosition_actual.y, _dPosition_desired.y],
-			[_dPosition_actual.z, _dPosition_desired.z]
-		];
-
-		for (let i = 0; i < 3; i++) {
-			//Skip is actual === desired value
-			if (a[i][0] === a[i][1]) {
-				continue;
-			}
-			//Actual is bigger than desired. Reduce value by v;
-			if (a[i][0] > a[i][1]) {
-				a[i][0] = Math.round((a[i][0] - v) * 1000) / 1000;
-				if (a[i][0] < a[i][1]) {
-					a[i][0] = a[i][1];
+		let y = _dPosition_desired.y;
+		_dPosition_desired.applyQuaternion(_camera.quaternion);
+		let vector = _dPosition_actual;
+		let dMultiplication = 0.5;
+		let dMultiplication_braking = 2;
+		let normalized = new THREE.Vector3(_dPosition_desired.x,y,_dPosition_desired.z).normalize();
+		if(_dPosition_desired.x !== 0 || y !== 0 ||_dPosition_desired.z){
+			if(_dPosition_multiplier < _dPosition_maxSpeed){
+				_dPosition_multiplier += dMultiplication;
+				if(_dPosition_multiplier > _dPosition_maxSpeed){
+					_dPosition_multiplier = _dPosition_maxSpeed;
 				}
+			}else if(_dPosition_multiplier > _dPosition_maxSpeed){
+					_dPosition_multiplier -= dMultiplication;
+					if(_dPosition_multiplier < 0){
+						_dPosition_multiplier = 0;
+					}
 			}
-			//Actual is smaller than desired. Increase value by v;
-			else if (a[i][0] < a[i][1]) {
-				a[i][0] = Math.round((a[i][0] + v) * 1000) / 1000;
+			vector = normalized.multiplyScalar(_dPosition_multiplier);
+		} else {
+			_dPosition_multiplier -= dMultiplication_braking;
+				if(_dPosition_multiplier < 0){
+					_dPosition_multiplier = 0;
+				}
+			vector.normalize().multiplyScalar(_dPosition_multiplier);
 			}
-		}
 
-		let vector = new THREE.Vector3(a[0][0], a[1][0], a[2][0]);
+
 		_dPosition_actual = vector;
 
-
-		let angle = get2dAngle(_cameraLookAtAxis.x,_cameraLookAtAxis.z,0,-1);
 		//TODO: Create a working WASD movement
-
+		console.log("Multiplier:"+_dPosition_multiplier);
 		//Angle → cos(alpha) = (vA * vB)/(|vA|*|vB|)
 		return vector;//.applyAxisAngle(new THREE.Vector3(0,1,0),angle);
 	}
