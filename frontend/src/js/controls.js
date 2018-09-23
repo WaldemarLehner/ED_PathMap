@@ -32,7 +32,7 @@ THREE.EDControls = function(camera,scene) {
 	this.blockZoom = false; //:boolean
 	this.blockRotation = false; //:boolean
 	this.blockPan = false; //:boolean
-	this.timeToMaxKeySpeed = 1000; //:number in Milliseconds
+	this.timeToMaxKeySpeed = 500; //:number in Milliseconds
 	this.focusAt = function(_vector3_, _distance_, _angle_) { //:THREE.Vector3; :float; :THREE.Quaternion
 		//#region "focusAt" logic
 		//#endregion
@@ -51,11 +51,14 @@ THREE.EDControls = function(camera,scene) {
 	var _distanceToTarget = 0; //:float
 	var _dPosition_actual = new THREE.Vector3(); //:THREE.Vector3
 	var _dPosition_desired = new THREE.Vector3(); //:THREE.Vector3
+	var _dPosition_maxSpeed = 100; //ly/s
+	var _dPosition_multiplier = 0;
 	var _angleCameraWorld = 0; //:float
 	var _dAngle_actual = new THREE.Euler();
 	var _dAngle_desired = new THREE.Euler();
 	var _dZoom_actual = 0;
 	var _dZoom_desired = 0;
+	var _MouseWheelZoom = 0;
 	var _oldTime = Date.now(); //:int
 	var _newTime = Date.now(); //:int
 	var _areKeysPressed = {
@@ -69,6 +72,23 @@ THREE.EDControls = function(camera,scene) {
 		zoomOut: false,
 		rotateUp: false,
 		rotateDown: false
+	};
+	var _cameraLookAtAxis = new THREE.Vector3();
+	//Mouse Position at the beginning of a mouse movement
+	var _mouse = {
+		position : {
+			before: new THREE.Vector2(-1,-1),
+			now: new THREE.Vector2(-1,-1)
+		},
+		isPressed: {
+			mouseLeft:false,
+			mouseRight:false
+		},
+		zoom:{
+			toDo: 0,
+
+		},
+		needsUpdate:false
 	};
 	var _ui = {};
 	//#endregion
@@ -97,10 +117,84 @@ THREE.EDControls = function(camera,scene) {
 
 	//#endregion
 	//#region Listeners
+	window.addEventListener("wheel",function(e){
+		onmouseWheel(e.deltaY);
+	});
 	window.addEventListener("keydown", function(e) {
 		onkeyDown(e.keyCode);
 	});
+	window.addEventListener("keyup", function(e) {
+		onkeyUp(e.keyCode);
+	});
+	window.addEventListener("mousedown",function(e){
+		e.preventDefault();
+		onmouseDown(e.which);
+	});
+	window.addEventListener("mouseup",function(e){
+		e.preventDefault();
+		onmouseUp(e.which);
+	});
+	window.addEventListener("mousemove",function(e){
+		e.preventDefault();
+		onmouseMove(e);
+	});
+	function onmouseWheel(e){
+		_mouse.zoom.toDo += e;
 
+	}
+	//1: left click //2: middle click //3: right click
+	function onmouseDown(code){
+		if(code === 1){
+			_mouse.isPressed.mouseLeft = true;
+		}
+		else if(code === 3){
+			_mouse.isPressed.mouseRight = true;
+		}
+	}
+	function onmouseUp(code){
+		if(code === 1){
+			_mouse.isPressed.mouseLeft = false;
+		}
+		else if(code === 3){
+			_mouse.isPressed.mouseRight = false;
+		}
+	}
+	function onmouseMove(code){
+		// right → +x | down → +y
+		_mouse.position.now = new THREE.Vector2(code.clientX,window.innerHeight-code.clientY);
+
+		if(!(_mouse.isPressed.mouseLeft&&_mouse.isPressed.mouseRight)){
+
+			let posA = _mouse.position.before;
+			let posB = _mouse.position.now;
+			let dX = posB.x-posA.x;
+			let dY = posB.y-posA.y;
+			if(_mouse.isPressed.mouseLeft){
+				let v = 0.003;
+
+				let rot = _currentCameraRotation;
+
+				if(posA.x !== posB.x || posA.y !== posB.y){
+					//if posA !== posB
+
+					rot.y -= dX*v;
+					rot.x += dY*v;
+				}
+				_currentCameraRotation.set(rot.x,rot.y,rot.z);
+				_mouse.needsUpdate = true;
+			}
+			else if(_mouse.isPressed.mouseRight){
+				let v = 1;
+				let vector = new THREE.Vector3(-dX*v,-dY*v,0);
+				vector.applyQuaternion(_camera.quaternion);
+				_target.x += vector.x;
+				_target.y += vector.y;
+				_target.z += vector.z;
+				_mouse.needsUpdate = true;
+			}
+		}
+		//console.log(_mousePosition);
+	}
 	function onkeyDown(code) {
 
 
@@ -141,10 +235,6 @@ THREE.EDControls = function(camera,scene) {
 			_areKeysPressed.rotateDown = true;
 		}
 	}
-	window.addEventListener("keyup", function(e) {
-		onkeyUp(e.keyCode);
-	});
-
 	function onkeyUp(code) {
 
 		if (_this.keys.front === code) {
@@ -200,7 +290,7 @@ THREE.EDControls = function(camera,scene) {
 		if (dTime > 1000) {
 			return; /*do nothing*/
 		}
-
+		//#region KEY FUNCTIONALITY
 		//#region Key Functionality [Rotation]
 		_dAngle_desired = new THREE.Euler();
 		let z = 0.2;
@@ -222,7 +312,7 @@ THREE.EDControls = function(camera,scene) {
 		}
 		calculateCurrentDeltaRotation((dTime/_this.timeToMaxKeySpeed)*_this.keySpeed.rotate);
 		_currentCameraRotation.set(_dAngle_actual.x+_currentCameraRotation.x,_dAngle_actual.y+_currentCameraRotation.y,_dAngle_actual.z+_currentCameraRotation.z);
-		console.log(_currentCameraRotation);
+		//console.log(_currentCameraRotation);
 		if(_currentCameraRotation.x > 1.4){
 			_currentCameraRotation.x = 1.4;
 			_dAngle_actual.x = 0;
@@ -289,6 +379,21 @@ THREE.EDControls = function(camera,scene) {
 			_dZoom_actual = 0;
 		}
 		//#endregion
+		//#endregion
+		//#region MOUSE FUNCTIONALITY
+		//#region [Mouse] Zoom
+		if(_mouse.zoom.toDo !== 0){
+		_mouse.needsUpdate = true;
+		_distanceToTarget += _mouse.zoom.toDo;
+		_mouse.zoom.toDo = 0;
+	}
+		//#endregion
+
+
+
+		//#endregion
+		_mouse.position.before = _mouse.position.now;
+		//#endregion
 		//#region UI
 		_indicatorGroup.position.set(_target.x,_target.y,_target.z);
 		_ui.focus.arrow_vert.rotation.setFromQuaternion(_camera.quaternion,"YXZ");
@@ -315,37 +420,38 @@ THREE.EDControls = function(camera,scene) {
 	};
 	//#region Pan Smoothing
 	function calculateCurrentDeltaAnkerPosition(v) {
-		let a = [
-			[_dPosition_actual.x, _dPosition_desired.x],
-			[_dPosition_actual.y, _dPosition_desired.y],
-			[_dPosition_actual.z, _dPosition_desired.z]
-		];
-
-		for (let i = 0; i < 3; i++) {
-			//Skip is actual === desired value
-			if (a[i][0] === a[i][1]) {
-				continue;
-			}
-			//Actual is bigger than desired. Reduce value by v;
-			if (a[i][0] > a[i][1]) {
-				a[i][0] = Math.round((a[i][0] - v) * 1000) / 1000;
-				if (a[i][0] < a[i][1]) {
-					a[i][0] = a[i][1];
+		let y = _dPosition_desired.y;
+		_dPosition_desired.applyQuaternion(_camera.quaternion);
+		let vector = _dPosition_actual;
+		let dMultiplication = 0.5;
+		let dMultiplication_braking = 2;
+		let normalized = new THREE.Vector3(_dPosition_desired.x,y,_dPosition_desired.z).normalize();
+		if(_dPosition_desired.x !== 0 || y !== 0 ||_dPosition_desired.z){
+			if(_dPosition_multiplier < _dPosition_maxSpeed){
+				_dPosition_multiplier += dMultiplication;
+				if(_dPosition_multiplier > _dPosition_maxSpeed){
+					_dPosition_multiplier = _dPosition_maxSpeed;
 				}
+			}else if(_dPosition_multiplier > _dPosition_maxSpeed){
+					_dPosition_multiplier -= dMultiplication;
+					if(_dPosition_multiplier < 0){
+						_dPosition_multiplier = 0;
+					}
 			}
-			//Actual is smaller than desired. Increase value by v;
-			else if (a[i][0] < a[i][1]) {
-				a[i][0] = Math.round((a[i][0] + v) * 1000) / 1000;
+			vector = normalized.multiplyScalar(_dPosition_multiplier);
+		} else {
+			_dPosition_multiplier -= dMultiplication_braking;
+				if(_dPosition_multiplier < 0){
+					_dPosition_multiplier = 0;
+				}
+			vector.normalize().multiplyScalar(_dPosition_multiplier);
 			}
-		}
 
-		let vector = new THREE.Vector3(a[0][0], a[1][0], a[2][0]);
+
 		_dPosition_actual = vector;
-		let cameraLookAtAxis = new THREE.Vector3(0,0,-1).applyQuaternion(_camera.quaternion);
 
-		let angle = get2dAngle(cameraLookAtAxis.x,cameraLookAtAxis.z,0,-1);
 		//TODO: Create a working WASD movement
-
+		console.log("Multiplier:"+_dPosition_multiplier);
 		//Angle → cos(alpha) = (vA * vB)/(|vA|*|vB|)
 		return vector;//.applyAxisAngle(new THREE.Vector3(0,1,0),angle);
 	}
@@ -369,8 +475,8 @@ THREE.EDControls = function(camera,scene) {
 			}
 		}
 		_dZoom_actual = x;
-		console.log(_dZoom_desired);
-		console.log(x);
+		//console.log(_dZoom_desired);
+		//console.log(x);
 		return x;
 	}
 	//#endregion
@@ -412,19 +518,24 @@ THREE.EDControls = function(camera,scene) {
 	function transformCamera() {
 		//camera rotation
 		if (needsCameraUpdate()) {
-			let cameraLookAtAxis = new THREE.Vector3(0,0,-1).applyQuaternion(_camera.quaternion);
-			_camera.position.set(_target.x+cameraLookAtAxis.x*_distanceToTarget*-1, _target.y+cameraLookAtAxis.y*_distanceToTarget*-1, _target.z+cameraLookAtAxis.z*_distanceToTarget*-1);
 			_camera.rotation.set(_currentCameraRotation.x, _currentCameraRotation.y, _currentCameraRotation.z);
+			 _cameraLookAtAxis = new THREE.Vector3(0,0,-1).applyQuaternion(_camera.quaternion);
+			_camera.position.set(_target.x+_cameraLookAtAxis.x*_distanceToTarget*-1, _target.y+_cameraLookAtAxis.y*_distanceToTarget*-1, _target.z+_cameraLookAtAxis.z*_distanceToTarget*-1);
 
 		}
 	}
 	function needsCameraUpdate() {
+
+		//[Mouse]
+		if(_mouse.needsUpdate){
+			return true;
+		}
 		//[Panning]
 		if (_dPosition_actual.x !== 0 || _dPosition_actual.y !== 0 || _dPosition_actual.z !== 0 ){
 			return true;
 		}
 		//[Rotation]
-		if (_dAngle_actual.x !== 0 || _dAngle_actual.y !== 0 || _dAngle_actual.z !== 0 ){
+		if (_dAngle_actual.x !== 0 || _dAngle_actual.y !== 0 || _dAngle_actual.z !== 0){
 			return true;
 		}
 		//[Zoom]
