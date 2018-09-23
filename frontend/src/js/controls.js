@@ -71,6 +71,7 @@ THREE.EDControls = function(camera,scene) {
 		rotateUp: false,
 		rotateDown: false
 	};
+	var _cameraLookAtAxis = new THREE.Vector3();
 	//Mouse Position at the beginning of a mouse movement
 	var _mouse = {
 		position : {
@@ -160,24 +161,35 @@ THREE.EDControls = function(camera,scene) {
 		// right → +x | down → +y
 		_mouse.position.now = new THREE.Vector2(code.clientX,window.innerHeight-code.clientY);
 
-		if(_mouse.isPressed.mouseLeft){
-			let v = 0.003;
-			let dAngleX;
-			let dAngleY;
+		if(!(_mouse.isPressed.mouseLeft&&_mouse.isPressed.mouseRight)){
+
 			let posA = _mouse.position.before;
 			let posB = _mouse.position.now;
-			let rot = _currentCameraRotation;
+			let dX = posB.x-posA.x;
+			let dY = posB.y-posA.y;
+			if(_mouse.isPressed.mouseLeft){
+				let v = 0.003;
 
-			if(posA.x !== posB.x || posA.y !== posB.y){
-				//if posA !== posB
-				dAngleX = posB.x-posA.x;
-				dAngleY = posB.y-posA.y;
-				console.log(dAngleX,dAngleY);
-				rot.y += dAngleX*v;
-				rot.x += dAngleY*v;
+				let rot = _currentCameraRotation;
+
+				if(posA.x !== posB.x || posA.y !== posB.y){
+					//if posA !== posB
+
+					rot.y -= dX*v;
+					rot.x += dY*v;
+				}
+				_currentCameraRotation.set(rot.x,rot.y,rot.z);
+				_mouse.needsUpdate = true;
 			}
-			_currentCameraRotation.set(rot.x,rot.y,rot.z);
-			_mouse.needsUpdate = true;
+			else if(_mouse.isPressed.mouseRight){
+				let v = 1;
+				let vector = new THREE.Vector3(-dX*v,-dY*v,0);
+				vector.applyQuaternion(_camera.quaternion);
+				_target.x += vector.x;
+				_target.y += vector.y;
+				_target.z += vector.z;
+				_mouse.needsUpdate = true;
+			}
 		}
 		//console.log(_mousePosition);
 	}
@@ -380,12 +392,6 @@ THREE.EDControls = function(camera,scene) {
 		//#endregion
 		_mouse.position.before = _mouse.position.now;
 		//#endregion
-	//#region [Mouse] Rotation/Panning
-		function mouseMoveCamera(){
-
-
-	}
-	//#endregion
 		//#region UI
 		_indicatorGroup.position.set(_target.x,_target.y,_target.z);
 		_ui.focus.arrow_vert.rotation.setFromQuaternion(_camera.quaternion,"YXZ");
@@ -438,9 +444,9 @@ THREE.EDControls = function(camera,scene) {
 
 		let vector = new THREE.Vector3(a[0][0], a[1][0], a[2][0]);
 		_dPosition_actual = vector;
-		let cameraLookAtAxis = new THREE.Vector3(0,0,-1).applyQuaternion(_camera.quaternion);
 
-		let angle = get2dAngle(cameraLookAtAxis.x,cameraLookAtAxis.z,0,-1);
+
+		let angle = get2dAngle(_cameraLookAtAxis.x,_cameraLookAtAxis.z,0,-1);
 		//TODO: Create a working WASD movement
 
 		//Angle → cos(alpha) = (vA * vB)/(|vA|*|vB|)
@@ -509,9 +515,9 @@ THREE.EDControls = function(camera,scene) {
 	function transformCamera() {
 		//camera rotation
 		if (needsCameraUpdate()) {
-			let cameraLookAtAxis = new THREE.Vector3(0,0,-1).applyQuaternion(_camera.quaternion);
-			_camera.position.set(_target.x+cameraLookAtAxis.x*_distanceToTarget*-1, _target.y+cameraLookAtAxis.y*_distanceToTarget*-1, _target.z+cameraLookAtAxis.z*_distanceToTarget*-1);
 			_camera.rotation.set(_currentCameraRotation.x, _currentCameraRotation.y, _currentCameraRotation.z);
+			 _cameraLookAtAxis = new THREE.Vector3(0,0,-1).applyQuaternion(_camera.quaternion);
+			_camera.position.set(_target.x+_cameraLookAtAxis.x*_distanceToTarget*-1, _target.y+_cameraLookAtAxis.y*_distanceToTarget*-1, _target.z+_cameraLookAtAxis.z*_distanceToTarget*-1);
 
 		}
 	}
