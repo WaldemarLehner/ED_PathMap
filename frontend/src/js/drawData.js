@@ -11,6 +11,14 @@ function drawData(logList, systemList, connectionList, maxSystemVisitCount, maxC
   //#region SET BY USER//
     // Show Debug Data
   var _USER_DEBUG = true;
+    // Optimization Sectors
+  var _USER_SECTOR_SIZE = 2500;
+      //offset (x|y|z) in ly so there's no negative values in the ID of each sector
+  var _USER_SECTOR_OFFSET = {
+    x:50000 ,
+    y:10000,
+    z:20000
+  };
     // Should the points and lines have a identical color scale? Will use the highest value from maxSystemVisitCount / maxConnectionVisitCount
   var _USER_USE_IDENTICAL_SCALE = false;
     //Should the maxSystemVisitCount/maxConnectionVisitCount be overwritten?
@@ -87,20 +95,47 @@ else if(typeof maxConnectionVisitCount !== "number"){
   maxConnectionVisitCount = 50;
 }
 //#endregion
+let linesRef = {};
+let pointsRef = {};
+let lines = new THREE.Group();
+let points = new THREE.Group();
 //#region Draw Connection Lines
   for(let entry in connectionList){
     try{
       //skip loop if property is from prototype
       if(!connectionList.hasOwnProperty(entry)){continue;}
-      let material = getMaterialByCount(connectionList[entry].tosys1count+connectionList[entry].tosys2count,false);
-      let geometry = new THREE.BufferGeometry();
       let system1 = systemList[connectionList[entry].sys1];
       let system2 = systemList[connectionList[entry].sys2];
-      let vertices = new Float32Array([-system1.x,system1.y,system1.z,-system2.x,system2.y,system2.z]);
+      let x1 = -system1.x;
+      let y1 = system1.y;
+      let z1 = system1.z;
+      let x2 = -system2.x;
+      let y2 = system2.y;
+      let z2 = system2.z;
+      //Use System1 as the reference point to determine to which Sector the connection belongs to.
+      let sectorCoords = getSectorCoordinates(x1,y1,z1);
+      let sectorName = sectorCoords.x+":"+sectorCoords.y+":"+sectorCoords.z;
+      let group;
+      let posX,posY,posZ;
+      if(typeof linesRef[sectorName] === "undefined"){
+        group = new THREE.Group();
+        group.name = sectorName;
+      }else{
+        group = linesRef[sectorName];
+      }
+      posX = ((sectorCoords.x * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.x)+0.5*_USER_SECTOR_SIZE;
+      posY = ((sectorCoords.y * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.y)+0.5*_USER_SECTOR_SIZE;
+      posZ = ((sectorCoords.z * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.z)+0.5*_USER_SECTOR_SIZE;
+
+      group.position.set(posX,posY,posZ);
+      let material = getMaterialByCount(connectionList[entry].tosys1count+connectionList[entry].tosys2count,false);
+      let geometry = new THREE.BufferGeometry();
+      let vertices = new Float32Array([(x1-posX),y1-posY,z1-posZ,(x2-posX),y2-posY,z2-posZ]);
       geometry.addAttribute("position",new THREE.BufferAttribute(vertices,3));
       let object = new THREE.Line(geometry,material);
       object.name = entry;
-      scene_main.add(object);
+      group.add(object);
+      linesRef[sectorName] = group;
     }
     catch(e){
       console.warn("Could not load connection");
@@ -108,6 +143,7 @@ else if(typeof maxConnectionVisitCount !== "number"){
       //TODO: For some mysterious reason some systems do not exist in systemList. Black magic? They are in the SQLite DB and in the logs, but not in requiredSystems. So it's probably something in the c# program, which shouldnt be an issue when using a server, i hope.
     }
   }
+
 //#endregion
 //#region Draw System Dots
 
@@ -125,6 +161,23 @@ else if(typeof maxConnectionVisitCount !== "number"){
   }
 
 
+//#endregion
+//#region Sector Functions
+for(let entry in linesRef){
+  if(!linesRef.hasOwnProperty(entry)){
+    continue;
+  }
+  scene_main.add(linesRef[entry]);
+}
+console.log(linesRef);
+function getSectorCoordinates(x1,y1,z1){
+  let size = _USER_SECTOR_SIZE;
+  let offset = _USER_SECTOR_OFFSET;
+  let x = Math.floor((x1+offset.x)/size);
+  let y = Math.floor((y1+offset.y)/size);
+  let z = Math.floor((z1+offset.z)/size);
+  return {x:x,y:y,z:z};
+}
 //#endregion
 //#region Color/Size Calculations
   function getMaterialByCount(count,isPoint){
@@ -184,7 +237,7 @@ let skybox_material_data = [
 
 let skybox = new THREE.Mesh(new THREE.CubeGeometry(500000,500000,500000),skybox_material_data);
 skybox.rotation.set(0,-Math.PI/2,0);
-console.log(skybox_material_data);
+
 
 scene_skybox.add(skybox);
 scene_skybox.add(new THREE.AmbientLight(0xFFFFFF,0.3));
@@ -202,9 +255,8 @@ scene_skybox.add(galplane);
 controls = new THREE.EDControls( camera , scene_main);
 controls.minDistance = 10;
 controls.maxDistance = 10000;
-controls.enableDamping = true;
-controls.dampingFactor = 1.5;
-console.log(controls);
+
+
 //#endregion
 camera.rotation = new THREE.Euler();
 //#region animation loop at the end of loading
@@ -221,7 +273,6 @@ function animate(){
 }
 function update(){
   skybox.position.set(camera.position.x,camera.position.y,camera.position.z) ;
-  //console.log(camera.position);
 }
 animate();
 //#endregion

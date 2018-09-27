@@ -193,7 +193,6 @@ THREE.EDControls = function(camera,scene) {
 				_mouse.needsUpdate = true;
 			}
 		}
-		//console.log(_mousePosition);
 	}
 	function onkeyDown(code) {
 
@@ -312,7 +311,6 @@ THREE.EDControls = function(camera,scene) {
 		}
 		calculateCurrentDeltaRotation((dTime/_this.timeToMaxKeySpeed)*_this.keySpeed.rotate);
 		_currentCameraRotation.set(_dAngle_actual.x+_currentCameraRotation.x,_dAngle_actual.y+_currentCameraRotation.y,_dAngle_actual.z+_currentCameraRotation.z);
-		//console.log(_currentCameraRotation);
 		if(_currentCameraRotation.x > 1.4){
 			_currentCameraRotation.x = 1.4;
 			_dAngle_actual.x = 0;
@@ -353,7 +351,6 @@ THREE.EDControls = function(camera,scene) {
 		//Normalize Vector so that going (for example) front-right is not faster than just front and set it to max speed.
 		//Normalizing gives the vector a length of 1 unit;
 		_dPosition_desired = vector_raw.normalize().multiplyScalar(_this.keySpeed.pan);
-		//console.log(_distanceToTarget);
 		let pan_vector = calculateCurrentDeltaAnkerPosition((dTime / _this.timeToMaxKeySpeed) * _this.keySpeed.pan);
 		_target.add(pan_vector);
 
@@ -450,8 +447,6 @@ THREE.EDControls = function(camera,scene) {
 
 		_dPosition_actual = vector;
 
-		//TODO: Create a working WASD movement
-		console.log("Multiplier:"+_dPosition_multiplier);
 		//Angle → cos(alpha) = (vA * vB)/(|vA|*|vB|)
 		return vector;//.applyAxisAngle(new THREE.Vector3(0,1,0),angle);
 	}
@@ -475,8 +470,6 @@ THREE.EDControls = function(camera,scene) {
 			}
 		}
 		_dZoom_actual = x;
-		//console.log(_dZoom_desired);
-		//console.log(x);
 		return x;
 	}
 	//#endregion
@@ -517,14 +510,14 @@ THREE.EDControls = function(camera,scene) {
 	//#region Transform Camera
 	function transformCamera() {
 		//camera rotation
-		if (needsCameraUpdate()) {
+		if (_this.needsCameraUpdate()) {
 			_camera.rotation.set(_currentCameraRotation.x, _currentCameraRotation.y, _currentCameraRotation.z);
 			 _cameraLookAtAxis = new THREE.Vector3(0,0,-1).applyQuaternion(_camera.quaternion);
 			_camera.position.set(_target.x+_cameraLookAtAxis.x*_distanceToTarget*-1, _target.y+_cameraLookAtAxis.y*_distanceToTarget*-1, _target.z+_cameraLookAtAxis.z*_distanceToTarget*-1);
 
 		}
 	}
-	function needsCameraUpdate() {
+	this.needsCameraUpdate = function() {
 
 		//[Mouse]
 		if(_mouse.needsUpdate){
@@ -543,7 +536,7 @@ THREE.EDControls = function(camera,scene) {
 			return true;
 		}
 		return false;
-	}
+	};
 	//#endregion
 };
 THREE.EDControls.prototype = Object.create(THREE.EventDispatcher.prototype);
