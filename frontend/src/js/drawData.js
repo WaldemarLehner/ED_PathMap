@@ -19,6 +19,8 @@ function drawData(logList, systemList, connectionList, maxSystemVisitCount, maxC
     y:10000,
     z:20000
   };
+    //The distance from when the Lines will no longer be drawn.
+  var _USER_SECTOR_LINES_RENDER_DISTANCE = 25000;
     // Should the points and lines have a identical color scale? Will use the highest value from maxSystemVisitCount / maxConnectionVisitCount
   var _USER_USE_IDENTICAL_SCALE = false;
     //Should the maxSystemVisitCount/maxConnectionVisitCount be overwritten?
@@ -33,9 +35,9 @@ function drawData(logList, systemList, connectionList, maxSystemVisitCount, maxC
     // Color values (in hexdec) for maximum and minimum values
   var _COLOR_DEFINITIONS = {min:"#a30000",max:"#00ff00"};
   //#endregion END OF USER SET SETTINGS //
-  canvas_width = 1440;
-  canvas_height = 810;
-
+  var canvas_width = 1440;
+  var canvas_height = 810;
+  var updatePointsThisCycle = false;
 
   if(typeof maxSystemVisitCount === "undefined"){
     if(_USER_USE_IDENTICAL_SCALE){
@@ -178,6 +180,25 @@ function getSectorCoordinates(x1,y1,z1){
   let z = Math.floor((z1+offset.z)/size);
   return {x:x,y:y,z:z};
 }
+function updateLOD(bool){
+  if(bool){
+    updatePointsThisCycle = false;
+    //Point Handling
+  }
+  else{
+    updatePointsThisCycle = true;
+    //Lines Handling
+    for(let entry in linesRef){
+      let dist = linesRef[entry].position.distanceTo(camera.position);
+      if(dist > _USER_SECTOR_LINES_RENDER_DISTANCE){
+        //Dont render sector
+        linesRef[entry].visible = false;
+      }else{
+        linesRef[entry].visible = true;
+      }
+    }
+  }
+}
 //#endregion
 //#region Color/Size Calculations
   function getMaterialByCount(count,isPoint){
@@ -263,6 +284,7 @@ camera.rotation = new THREE.Euler();
 function animate(){
   requestAnimationFrame(animate);
   update();
+  updateLOD(updatePointsThisCycle);
   if(isDefaultSceneDrawn){
     renderer.clear();
     renderer.render(scene_skybox,camera);
