@@ -101,6 +101,7 @@ let linesRef = {};
 let pointsRef = {};
 let lines = new THREE.Group();
 let points = new THREE.Group();
+let _scale = chroma.scale([_COLOR_DEFINITIONS.min,_COLOR_DEFINITIONS.max]).mode("lrgb");
 //#region Draw Connection Lines
   for(let entry in connectionList){
     try{
@@ -130,7 +131,10 @@ let points = new THREE.Group();
       posZ = ((sectorCoords.z * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.z)+0.5*_USER_SECTOR_SIZE;
 
       group.position.set(posX,posY,posZ);
-      let material = getMaterialByCount(connectionList[entry].tosys1count+connectionList[entry].tosys2count,false);
+      //Material Generation
+      let count = (connectionList[entry].tosys1count+connectionList[entry].tosys2count);
+      let fraction = (((count-1 / maxConnectionVisitCount-1)*0.1) > 1) ? 1 : ((count-1/maxConnectionVisitCount-1)*0.1);
+      let material = new THREE.LineBasicMaterial({color:new THREE.Color(_scale(fraction).num()),opacity:0.5+(fraction/2),transparent:true});
       let geometry = new THREE.BufferGeometry();
       let vertices = new Float32Array([(x1-posX),y1-posY,z1-posZ,(x2-posX),y2-posY,z2-posZ]);
       geometry.addAttribute("position",new THREE.BufferAttribute(vertices,3));
@@ -148,12 +152,39 @@ let points = new THREE.Group();
 
 //#endregion
 //#region Draw System Dots
+//Generate the Base Materials
+let systemDotTextureList = {};
+systemDotTextureList.high = generateLOD0DotTexture();
+function generateLOD0DotTexture(){
+  let c = document.createElement("canvas");
+  let ctx_size = 32;
+  c.width = c.height = ctx_size;
+  let ctx = c.getContext("2d");
+  let texture = new THREE.Texture(c);
+  ctx.beginPath();
+  ctx.arc(ctx_size/2,ctx_size/2,ctx_size/2,0,2*Math.PI,false);
+  ctx.fillStyle = "#FFFFFF";
+  ctx.fill();
+  texture.needsUpdate = true;
+  if(texture.minFilter !== THREE.NearestFilter && texture.minFilter !== THREE.LinearFilter){
+    texture.minFilter = THREE.NearestFilter;
+  }
+  return new THREE.PointsMaterial({size:1,color:0xFFFFFF,map:texture,transparent:true,depthWrite:false});
+}
+// ---
 
   for(let entry in systemList){
 
     //skip loop if property is from prototype
       if(!systemList.hasOwnProperty(entry)){ console.warn(entry);continue; }
-      let material = getMaterialByCount(systemList[entry].count,true);
+      let count = systemList[entry].count;
+      let fraction = (((count-1 / maxSystemVisitCount-1)*0.1) > 1) ? 1 : ((count-1/maxSystemVisitCount-1)*0.1);
+      let color = _scale(fraction).num();
+      //let material = new THREE.PointsMaterial();
+      let material = systemDotTextureList.high.clone();
+      material.color.setHex(color);
+      material.size = (_USER_VISIT_AFFECT_POINT_SIZE) ? ( _SIZE_DEFINITIONS.point.min + fraction * _SIZE_DEFINITIONS.point.max) : (_SIZE_DEFINITIONS.point.default);
+      //material.needsUpdate = true;
       let geometry = new THREE.BufferGeometry();
       let vertices = new Float32Array([-systemList[entry].x,systemList[entry].y,systemList[entry].z]);
       geometry.addAttribute("position",new THREE.BufferAttribute(vertices,3));
