@@ -20,20 +20,26 @@ function drawData(logList, systemList, connectionList, maxSystemVisitCount, maxC
     z:20000
   };
     //The distance from when the Lines will no longer be drawn.
-  var _USER_SECTOR_LINES_RENDER_DISTANCE = 25000;
+  const _USER_SECTOR_LINES_RENDER_DISTANCE = 25000;
+    //The distance from when the Points will change to a simple dot representation
+  const _USER_SECTOR_POINTS_RENDER_LOD1_DISTANCE = 5000;
+    //The distance from when only a portion of the Points will be rendered
+  const _USER_SECTOR_POINTS_RENDER_LOD2_DISTANCE = 20000;
+    //How likely is it that a point gets drawn in LOD2 State?
+  const _USER_SECTOR_POINTS_RENDER_LOD2_PERCENTAGE = 10;
     // Should the points and lines have a identical color scale? Will use the highest value from maxSystemVisitCount / maxConnectionVisitCount
-  var _USER_USE_IDENTICAL_SCALE = false;
+  const _USER_USE_IDENTICAL_SCALE = false;
     //Should the maxSystemVisitCount/maxConnectionVisitCount be overwritten?
-  var _USER_OVERRIDE_MAX_COUNT = true;
-  var _USER_OVERRIDE_DEFINITIONS = {system:50,connection:10};
+  const _USER_OVERRIDE_MAX_COUNT = true;
+  const _USER_OVERRIDE_DEFINITIONS = {system:50,connection:10};
   // Should point/line size be affected by times visited?
-  var _USER_VISIT_AFFECT_POINT_SIZE = true;
-  var _USER_VISIT_AFFECT_LINE_SIZE = true;
+  const _USER_VISIT_AFFECT_POINT_SIZE = true;
+  const _USER_VISIT_AFFECT_LINE_SIZE = true;
     // Min/max point/line size (default is used if _USER_VISIT_AFFECT_LINE/POINT_SIZE is set to "false")
-  var _SIZE_DEFINITIONS = {point:{min:2,max:4,default:3},line:{min:1,max:10,default:2}};
+  const _SIZE_DEFINITIONS = {point:{min:2,max:4,default:3},line:{min:1,max:10,default:2}};
 
     // Color values (in hexdec) for maximum and minimum values
-  var _COLOR_DEFINITIONS = {min:"#a30000",max:"#00ff00"};
+  const _COLOR_DEFINITIONS = {min:"#a30000",max:"#00ff00"};
   //#endregion END OF USER SET SETTINGS //
   var canvas_width = 1440;
   var canvas_height = 810;
@@ -95,6 +101,9 @@ if(typeof maxConnectionVisitCount === "undefined"){
 else if(typeof maxConnectionVisitCount !== "number"){
   console.warn("given maxConnectionVisitCount is not a number!");
   maxConnectionVisitCount = 50;
+}
+if(_USER_SECTOR_POINTS_RENDER_LOD1_DISTANCE > _USER_SECTOR_POINTS_RENDER_LOD2_DISTANCE){
+  throw "_USER_SECTOR_POINTS_RENDER_LOD1_DISTANCE shall not be larger than _USER_SECTOR_POINTS_RENDER_LOD2_DISTANCE!";
 }
 //#endregion
 let linesRef = {};
@@ -177,20 +186,62 @@ function generateLOD0DotTexture(){
 
     //skip loop if property is from prototype
       if(!systemList.hasOwnProperty(entry)){ console.warn(entry);continue; }
+      //System Coords
+      let x = -systemList[entry].x;
+      let y = systemList[entry].y;
+      let z = systemList[entry].z;
+      //Check if Sector exists; If not: create new sector
+      let sectorCoords = getSectorCoordinates(x,y,z);
+      let sectorName = sectorCoords.x+":"+sectorCoords.y+":"+sectorCoords.z;
+      let group,LOD0,LOD1;
+      if(typeof pointsRef[sectorName] === "undefined"){
+        group = new THREE.Group();
+        group.name = sectorName;
+        LOD0 = new THREE.Group();
+        LOD0.name = "LOD0 @ "+sectorName;
+        LOD1 = new THREE.Group();
+        LOD1.name = "LOD1 @ "+sectorName;
+      }else{
+        group = pointsRef[sectorName];
+        LOD0 = group.children[0];
+        LOD1 = group.children[1];
+      }
+      let posX = ((sectorCoords.x * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.x)+0.5*_USER_SECTOR_SIZE;
+      let posY = ((sectorCoords.y * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.y)+0.5*_USER_SECTOR_SIZE;
+      let posZ = ((sectorCoords.z * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.z)+0.5*_USER_SECTOR_SIZE;
       let count = systemList[entry].count;
       let fraction = (((count-1 / maxSystemVisitCount-1)*0.1) > 1) ? 1 : ((count-1/maxSystemVisitCount-1)*0.1);
+      //generate the Dots. Vertices can be used for LOD0 and LOD1;
       let color = _scale(fraction).num();
       //let material = new THREE.PointsMaterial();
       let material = systemDotTextureList.high.clone();
       material.color.setHex(color);
       material.size = (_USER_VISIT_AFFECT_POINT_SIZE) ? ( _SIZE_DEFINITIONS.point.min + fraction * _SIZE_DEFINITIONS.point.max) : (_SIZE_DEFINITIONS.point.default);
-      //material.needsUpdate = true;
+
+      group.position.set(posX,posY,posZ);
       let geometry = new THREE.BufferGeometry();
-      let vertices = new Float32Array([-systemList[entry].x,systemList[entry].y,systemList[entry].z]);
+      let vertices = new Float32Array([x-posX,y-posY,z-posZ]);
       geometry.addAttribute("position",new THREE.BufferAttribute(vertices,3));
-      let object = new THREE.Points(geometry,material);
-      object.name = systemList[entry].name;
-      scene_main.add(object);
+      let objectLOD0 = new THREE.Points(geometry,material);
+      objectLOD0.position.set(posX,posY,posZ);
+      objectLOD0.name = systemList[entry].name;
+      LOD0.add(objectLOD0);
+      let objectLOD1 = new THREE.Points(geometry,new THREE.PointsMaterial({color:color}));
+      objectLOD1.position.set(posX,posY,posZ);
+      LOD1.add(objectLOD1);
+      LOD1.visible = false;
+      group.userData = {lodState:0};
+      group.children[0] = LOD0;
+      group.children[1] = LOD1;
+      pointsRef[sectorName] = group;
+      /*
+      Structure:
+      PointsRef
+        > Sector (group)
+          > Point Group (group_system)
+            > LOD0      (LOD0)
+            > LOD1      (LOD1)
+      */
   }
 
 
@@ -202,7 +253,42 @@ for(let entry in linesRef){
   }
   scene_main.add(linesRef[entry]);
 }
-console.log(linesRef);
+for(let entry in pointsRef){
+  if(!pointsRef.hasOwnProperty(entry)){
+    continue;
+  }
+  scene_main.add(pointsRef[entry]);
+}
+//get System Calculation on init
+for(let entry in pointsRef){
+  if(!pointsRef.hasOwnProperty(entry)){
+    continue;
+  }
+  let dist = pointsRef[entry].position.distanceTo(camera.position);
+  if(dist < _USER_SECTOR_POINTS_RENDER_LOD1_DISTANCE){
+    pointsRef[entry].userData.lodState = 0;
+    pointsRef[entry].children[0].visible = true;
+    pointsRef[entry].children[1].visible = false;
+  }
+  else if(dist < _USER_SECTOR_POINTS_RENDER_LOD2_DISTANCE){
+    pointsRef[entry].userData.lodState = 1;
+    pointsRef[entry].children[0].visible = false;
+    pointsRef[entry].children[1].visible = true;
+  }
+  else{
+    pointsRef[entry].userData.lodState = 2;
+    pointsRef[entry].children[0].visible = false;
+    pointsRef[entry].children[1].visible = true;
+    pointsRef[entry].children[1].children.forEach(function(e){
+      e.visible = false;
+      let x = Math.random();
+      if(x < _USER_SECTOR_POINTS_RENDER_LOD2_PERCENTAGE/100){
+        e.visible = true;
+      }
+    });
+  }
+}
+
 function getSectorCoordinates(x1,y1,z1){
   let size = _USER_SECTOR_SIZE;
   let offset = _USER_SECTOR_OFFSET;
@@ -215,6 +301,51 @@ function updateLOD(bool){
   if(bool){
     updatePointsThisCycle = false;
     //Point Handling
+    for(let entry in pointsRef){
+      let dist = pointsRef[entry].position.distanceTo(camera.position);
+      let LODState;
+      if(dist < _USER_SECTOR_POINTS_RENDER_LOD1_DISTANCE){
+        LODState = 0;
+      }
+      else if(dist < _USER_SECTOR_POINTS_RENDER_LOD2_DISTANCE){
+        LODState = 1;
+      }
+      else{
+        LODState = 2;
+      }
+      if(pointsRef[entry].userData.lodState !== LODState){
+        if(LODState === 0){
+          pointsRef[entry].children[0].visible = true;
+          pointsRef[entry].children[1].visible = false;
+        }
+        else if(LODState === 1){
+          pointsRef[entry].children[0].visible = false;
+          pointsRef[entry].children[1].visible = true;
+        }
+
+        if(LODState === 2){
+          pointsRef[entry].children[1].children.forEach(function(e){
+            console.log(e);
+            e.visible = false;
+            let x = Math.random();
+            if(x > _USER_SECTOR_POINTS_RENDER_LOD2_PERCENTAGE/100){
+              e.visible = true;
+            }
+          });
+          pointsRef[entry].children[0].visible = false;
+        }
+        else if(pointsRef[entry].userData.lodState === 2){
+          pointsRef[entry].children[1].children.forEach(function(e){
+            e.visible = false;
+            let x = Math.random();
+            if(x > _USER_SECTOR_POINTS_RENDER_LOD2_PERCENTAGE/100){
+              e.visible = true;
+            }
+          });
+        }
+      }
+      pointsRef[entry].userData.lodState = LODState;
+    }
   }
   else{
     updatePointsThisCycle = true;
