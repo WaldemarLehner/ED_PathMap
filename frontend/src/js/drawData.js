@@ -10,7 +10,7 @@ function drawData(logList, systemList, connectionList, maxSystemVisitCount, maxC
 //Settings
   //#region SET BY USER//
     // Show Debug Data
-  var _USER_DEBUG = true;
+  var _USER_DEBUG = false;
     // Optimization Sectors
   var _USER_SECTOR_SIZE = 2500;
       //offset (x|y|z) in ly so there's no negative values in the ID of each sector
@@ -26,7 +26,7 @@ function drawData(logList, systemList, connectionList, maxSystemVisitCount, maxC
     //The distance from when only a portion of the Points will be rendered
   const _USER_SECTOR_POINTS_RENDER_LOD2_DISTANCE = 20000;
     //How likely is it that a point gets drawn in LOD2 State?
-  const _USER_SECTOR_POINTS_RENDER_LOD2_PERCENTAGE = 10;
+  const _USER_SECTOR_POINTS_RENDER_LOD2_PERCENTAGE = 20;
     // Should the points and lines have a identical color scale? Will use the highest value from maxSystemVisitCount / maxConnectionVisitCount
   const _USER_USE_IDENTICAL_SCALE = false;
     //Should the maxSystemVisitCount/maxConnectionVisitCount be overwritten?
@@ -260,6 +260,7 @@ for(let entry in pointsRef){
   scene_main.add(pointsRef[entry]);
 }
 //get System Calculation on init
+
 for(let entry in pointsRef){
   if(!pointsRef.hasOwnProperty(entry)){
     continue;
@@ -269,23 +270,38 @@ for(let entry in pointsRef){
     pointsRef[entry].userData.lodState = 0;
     pointsRef[entry].children[0].visible = true;
     pointsRef[entry].children[1].visible = false;
+    if(_USER_DEBUG){
+      pointsRef[entry].children[0].children.forEach(function(e){
+        e.material.color.setHex(0x00FF00);
+      });
+    }
   }
   else if(dist < _USER_SECTOR_POINTS_RENDER_LOD2_DISTANCE){
     pointsRef[entry].userData.lodState = 1;
     pointsRef[entry].children[0].visible = false;
     pointsRef[entry].children[1].visible = true;
+    if(_USER_DEBUG){
+      pointsRef[entry].children[1].children.forEach(function(e){
+        e.material.color.setHex(0x00FFFF);
+      });
+    }
   }
   else{
     pointsRef[entry].userData.lodState = 2;
     pointsRef[entry].children[0].visible = false;
     pointsRef[entry].children[1].visible = true;
     pointsRef[entry].children[1].children.forEach(function(e){
-      e.visible = false;
+      e.visible = true;
       let x = Math.random();
-      if(x < _USER_SECTOR_POINTS_RENDER_LOD2_PERCENTAGE/100){
-        e.visible = true;
+      if(x > _USER_SECTOR_POINTS_RENDER_LOD2_PERCENTAGE/100){
+        e.visible = false;
       }
     });
+    if(_USER_DEBUG){
+      pointsRef[entry].children[1].children.forEach(function(e){
+        e.material.color.setHex(0xFFFF00);
+      });
+    }
   }
 }
 
@@ -303,53 +319,68 @@ function updateLOD(bool){
     //Point Handling
     for(let entry in pointsRef){
       let dist = pointsRef[entry].position.distanceTo(camera.position);
-      let LODState;
+      let e = pointsRef[entry];
+
       if(dist < _USER_SECTOR_POINTS_RENDER_LOD1_DISTANCE){
-        LODState = 0;
+        if(pointsRef[entry].userData.lodState !== 0){
+          pointsRef[entry].userData.lodState = 0;
+          e.children[0].visible = true;
+          e.children[1].visible = false;
+          if(_USER_DEBUG){
+            e.children[0].children.forEach(function(entry){
+              entry.material.color.setHex(0x00FF00);
+            });
+          }
+        }
       }
       else if(dist < _USER_SECTOR_POINTS_RENDER_LOD2_DISTANCE){
-        LODState = 1;
-      }
-      else{
-        LODState = 2;
-      }
-      if(pointsRef[entry].userData.lodState !== LODState){
-        if(LODState === 0){
-          pointsRef[entry].children[0].visible = true;
-          pointsRef[entry].children[1].visible = false;
-        }
-        else if(LODState === 1){
-          pointsRef[entry].children[0].visible = false;
-          pointsRef[entry].children[1].visible = true;
+        if(pointsRef[entry].userData.lodState !== 1){
+          if(pointsRef[entry].userData.lodState === 2){
+            e.children[1].children.forEach(function(entry){
+              if(!entry.visible){
+                entry.visible = true;
+              }
+            });
+          }
+          pointsRef[entry].userData.lodState = 1;
+          e.children[0].visible = false;
+          e.children[1].visible = true;
+          if(_USER_DEBUG){
+            e.children[1].children.forEach(function(entry){
+              entry.material.color.setHex(0x00FFFF);
+            });
+          }
         }
 
-        if(LODState === 2){
-          pointsRef[entry].children[1].children.forEach(function(e){
-            console.log(e);
-            e.visible = false;
-            let x = Math.random();
-            if(x > _USER_SECTOR_POINTS_RENDER_LOD2_PERCENTAGE/100){
-              e.visible = true;
-            }
-          });
-          pointsRef[entry].children[0].visible = false;
-        }
-        else if(pointsRef[entry].userData.lodState === 2){
-          pointsRef[entry].children[1].children.forEach(function(e){
-            e.visible = false;
-            let x = Math.random();
-            if(x > _USER_SECTOR_POINTS_RENDER_LOD2_PERCENTAGE/100){
-              e.visible = true;
-            }
-          });
-        }
       }
-      pointsRef[entry].userData.lodState = LODState;
+      else{
+        if(pointsRef[entry].userData.lodState !== 2){
+          pointsRef[entry].userData.lodState = 2;
+          e.children[0].visible = false;
+          e.children[1].visible = true;
+          e.children[1].children.forEach(function(element){
+            if(_USER_DEBUG){
+              element.material.color.setHex(0xFFFF00);
+            }
+            if(element.visible){
+              element.visible = true;
+            }
+            if(Math.random() > _USER_SECTOR_POINTS_RENDER_LOD2_PERCENTAGE/100){
+              element.visible = false;
+            }
+          });
+        }
+
+      }
+
+
     }
   }
   else{
     updatePointsThisCycle = true;
     //Lines Handling
+
+
     for(let entry in linesRef){
       let dist = linesRef[entry].position.distanceTo(camera.position);
       if(dist > _USER_SECTOR_LINES_RENDER_DISTANCE){
@@ -357,6 +388,7 @@ function updateLOD(bool){
         linesRef[entry].visible = false;
       }else{
         linesRef[entry].visible = true;
+
       }
     }
   }

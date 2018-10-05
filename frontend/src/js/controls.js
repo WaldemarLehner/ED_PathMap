@@ -276,7 +276,7 @@ THREE.EDControls = function(camera,scene) {
 
 	//#endregion
 	//#region Camera setting
-	_camera.eulerOrder = "YXZ";
+	_camera.rotation.order = "YXZ";
 	//#endregion
 	//#region Update
 	this.update = function() {
