@@ -33,7 +33,7 @@ THREE.EDControls = function(camera,scene) {
 	this.blockRotation = false; //:boolean
 	this.blockPan = false; //:boolean
 	this.timeToMaxKeySpeed = 500; //:number in Milliseconds
-	this.focusAt = function(_vector3_, _distance_, _angle_) { //:THREE.Vector3; :float; :THREE.Quaternion
+	this.focusAt = function(_vector3_, _distance_, _angle_) { //:THREE.Vector3; :float; :THREE.Euler
 		//#region "focusAt" logic
 		//#endregion
 	};
