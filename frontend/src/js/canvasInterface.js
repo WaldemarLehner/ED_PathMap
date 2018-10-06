@@ -11,10 +11,21 @@
 */
 PATHMAP = {};
 //#region Interface
-PATHMAP.Interface = function(){
-	if(!(this instanceof PATHMAP.Interface)){
-		return new PATHMAP.Interface();
+PATHMAP.Interface = function(camera,scenes,controls,linesref,pointsref){
+	if(!(camera instanceof THREE.PerspectiveCamera || camera instanceof THREE.OrthographicCamera)){
+		throw "First paremeter needs to a THREE.js camera.";
 	}
+	if(!Array.isArray(scenes)){
+		throw "Second parameter needs to be a an array of all scenes";
+	}
+	if(!(controls instanceof THREE.EDControls)){
+		throw "Third paremeter needs to be typeof THREE.EDControls";
+	}
+	if(!(this instanceof PATHMAP.Interface)){
+		return new PATHMAP.Interface(camera,scenes,controls);
+	}
+
+
 	//#region API
 		//#region GET
 	this.getCamera = function(){
@@ -36,6 +47,7 @@ PATHMAP.Interface = function(){
 			throw "Expected a PATHMAP.Marker object.";
 		}
 		//TODO: add marker logic
+		return this;
 	};
 	this.focusCamera = function(vPos,Distance,eEuler){
 		let _pos,dist,euler;
@@ -68,13 +80,42 @@ PATHMAP.Interface = function(){
 		}
 		_controls.focusAt(_pos,dist,euler);
 	};
-
+	this.showSystemDots = function(bool){
+		if(typeof bool !== "boolean"){
+			throw "Given argument is not a boolean value.";
+		}
+		for(let sector in pointsref){
+			if(!pointsref.hasOwnProperty(sector)){
+				continue;
+			}
+			pointsref[sector].visible = bool;
+		}
+		return _this;
+	};
+	this.showSystemLines = function(bool){
+		if(typeof bool !== "boolean"){
+			throw "Given argument is not a boolean value.";
+		}
+		for(let sector in linesref){
+			if(!linesref.hasOwnProperty(sector)){
+				continue;
+			}
+			console.log(linesref[sector]);
+			linesref[sector].userData.lockVisibility = !bool;
+			linesref[sector].visible = bool;
+		}
+		return _this;
+	};
 		//#endregion
 	//#endregion
 	//#region private vars
-	var _controls,_camera;
-	var _scenes = [];
+	var _controls = controls;
+	var _camera = camera;
+	var _scenes = scenes;
 	var _markers = [];
+	var _pointsRef = {};
+	var _linesRef = {};
+	var _this = this;
 	//#endregion
 };
 
