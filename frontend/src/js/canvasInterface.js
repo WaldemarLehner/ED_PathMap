@@ -42,12 +42,27 @@ PATHMAP.Interface = function(camera,scenes,controls,linesref,pointsref){
 	};
 		//#endregion
 		//#region SET
-	this.addMarker = function(marker){
+	this.addMarker = function(vPos,marker,returnMarker){
 		if(!(marker instanceof PATHMAP.Marker)){
-			throw "Expected a PATHMAP.Marker object.";
+			throw "Expected a PATHMAP.Marker object as 2nd argument.";
 		}
-		//TODO: add marker logic
-		return this;
+		if(!(vPos instanceof THREE.Vector3)){
+			throw "Expected a THREE.Vector3 object as 1st argument.";
+		}
+		let retMarker = (typeof returnMarker === "boolean") ? returnMarker : false;
+		let markerObj = new THREE.Sprite(getMarkerMaterial(marker.srcName));
+		markerObj.position.set(vPos.x,vPos.y,vPos.z);
+		markerObj.center.y = 0;
+		let sizeDivider = 15;
+		markerObj.scale.set(1/sizeDivider,1.2/sizeDivider,1);
+
+		_scenes[2].add(markerObj);
+		//_markers.push(markerObj);
+		if(retMarker){
+			return markerObj;
+		}else{
+			return this;
+		}
 	};
 	this.focusCamera = function(vPos,Distance,eEuler){
 		let _pos,dist,euler;
@@ -100,12 +115,19 @@ PATHMAP.Interface = function(camera,scenes,controls,linesref,pointsref){
 			if(!linesref.hasOwnProperty(sector)){
 				continue;
 			}
-			console.log(linesref[sector]);
 			linesref[sector].userData.lockVisibility = !bool;
 			linesref[sector].visible = bool;
 		}
 		return _this;
 	};
+		//#endregion
+		//#region private Functions
+		function getMarkerMaterial(materialName){
+			let spriteMap = new THREE.TextureLoader().load("src/img/ui/markers/"+materialName+".png");
+			let mat = new THREE.SpriteMaterial({map:spriteMap,color:0xFFFFFF});
+			mat.sizeAttenuation = false;
+			return mat;
+		}
 		//#endregion
 	//#endregion
 	//#region private vars
@@ -119,12 +141,8 @@ PATHMAP.Interface = function(camera,scenes,controls,linesref,pointsref){
 	//#endregion
 };
 
-PATHMAP.Marker = function(vector3,indexOrstring){
-	if(!(vector3 instanceof THREE.Vector3)){
-		throw "first parameter needs to be instance of THREE.Vector3";
-	}
+PATHMAP.Marker = function(indexOrstring){
 	this.srcName = undefined;
-	this.position = vector3;
 	if(typeof indexOrstring === "number"){
 		// index definitions (indexArray)
 		let iA = [

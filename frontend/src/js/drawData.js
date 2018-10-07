@@ -445,7 +445,7 @@ function animate(){
   }
 }
 function update(){
-  skybox.position.set(camera.position.x,camera.position.y,camera.position.z) ;
+  skybox.position.set(camera.position.x,camera.position.y,camera.position.z);
 }
 //Add an Interface to global scope
 window.canvasInterface = new PATHMAP.Interface(camera,[scene_skybox,scene_main,scene_ui],controls,linesRef,pointsRef);
