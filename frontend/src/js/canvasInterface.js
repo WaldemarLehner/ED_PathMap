@@ -51,11 +51,11 @@ PATHMAP.Interface = function(camera,scenes,controls,linesref,pointsref){
 		}
 		let retMarker = (typeof returnMarker === "boolean") ? returnMarker : false;
 		let markerObj = new THREE.Sprite(getMarkerMaterial(marker.srcName));
-		markerObj.position.set(vPos.x,vPos.y,vPos.z);
+		markerObj.position.set(-vPos.x,vPos.y,vPos.z);
 		markerObj.center.y = 0;
-		let sizeDivider = 15;
+		let sizeDivider = 20;
 		markerObj.scale.set(1/sizeDivider,1.2/sizeDivider,1);
-
+		_markers.push(markerObj);
 		_scenes[2].add(markerObj);
 		//_markers.push(markerObj);
 		if(retMarker){
