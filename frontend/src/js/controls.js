@@ -33,8 +33,61 @@ THREE.EDControls = function(camera,scene) {
 	this.blockRotation = false; //:boolean
 	this.blockPan = false; //:boolean
 	this.timeToMaxKeySpeed = 500; //:number in Milliseconds
-	this.focusAt = function(_vector3_, _distance_, _angle_) { //:THREE.Vector3; :float; :THREE.Quaternion
+	this.focusAt = function(vector3, distance, angle, timeToAnimate) { //:THREE.Vector3; :float; :THREE.Euler;:float
 		//#region "focusAt" logic
+		//check for data integrity
+		if(!(vector3 instanceof THREE.Vector3)){
+			throw "Vector3 needs the isntace of THREE.Vector3";
+		}
+		if(typeof distance !== "number"){
+			throw "distance needs to type of Number";
+		}
+		if(!(angle instanceof THREE.Euler)){
+			throw "angle needs to be instance of THREE.Euler";
+		}
+		//current values
+		let posActual = new THREE.Vector3();
+		let rotActual;
+		let zoomActual;
+		posActual.set(_target.x+_cameraLookAtAxis.x*_distanceToTarget*-1, _target.y+_cameraLookAtAxis.y*_distanceToTarget*-1, _target.z+_cameraLookAtAxis.z*_distanceToTarget*-1);
+		zoomActual = _distanceToTarget;
+		rotActual = _currentCameraRotation;
+		//desired values
+		let posDesired = new THREE.Vector3();
+		let rotDesired = angle;
+		let zoomDesired = distance;
+		let desiredLookAtAxis = new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().setFromEuler(rotDesired));
+		console.log(desiredLookAtAxis);
+
+		if(typeof timeToAnimate === "number"){
+			if(timeToAnimate > 0){
+				timeToAnimate = Math.round(timeToAnimate);
+			}else{
+				timeToAnimate = 1000;
+			}
+		}
+		else{
+			timeToAnimate = 1000;
+		}
+		if(distance > 0){
+			//using angle distance and anker, calculate the "real" desired position of the camera.
+			posDesired.set(vector3.x+desiredLookAtAxis.x*zoomDesired*-1,vector3.y+desiredLookAtAxis.y*zoomDesired*-1,vector3.z+desiredLookAtAxis.z*zoomDesired*-1);
+
+		}
+		else{
+			posDesired = vector3;
+		}
+		//Start animation on next requestAnimationFrame() call
+		cameraTransition.currentAnimationTimeValue = 0;
+		cameraTransition.desiredPosition = posDesired;
+		cameraTransition.desiredDistance = zoomDesired;
+		cameraTransition.desiredRotation = rotDesired;
+		cameraTransition.anker = vector3;
+		cameraTransition.timeToAnimate = timeToAnimate;
+		cameraTransition.originalPosition = posActual;
+		cameraTransition.originalRotation = rotActual;
+		cameraTransition.originalDistance = zoomDesired;
+		cameraTransition.isInTransition = true;
 		//#endregion
 	};
 	this.getCamera = function() {
@@ -44,7 +97,7 @@ THREE.EDControls = function(camera,scene) {
 	//#region internal vars
 	var _this = this;
 	var _target = new THREE.Vector3();
-	var _currentPosition = new THREE.Vector3();
+
 	var _currentCameraRotation = new THREE.Euler();
 	var _camera = camera; //:THREE.Camera
 	var _indicatorGroup;
@@ -91,6 +144,17 @@ THREE.EDControls = function(camera,scene) {
 		needsUpdate:false
 	};
 	var _ui = {};
+	var cameraTransition = {
+		isInTransition:false,
+		originalPosition: undefined,
+		originalDistance: undefined,
+		originalRotation: undefined,
+		desiredPosition: undefined,
+		desiredDistance : undefined,
+		desiredRotation : undefined,
+		timeToAnimate: 1000,
+		currentAnimationTimeValue: undefined
+	};
 	//#endregion
 	//#region Setup
 	//Set up indicator
@@ -113,6 +177,13 @@ THREE.EDControls = function(camera,scene) {
 		_ui.focus = {circle: _indicatorGroup.children[0], arrow_pan: _indicatorGroup.children[1], arrow_vert: _indicatorGroup.children[2]};
 		scene.add(_indicatorGroup);
 
+	}
+	function getAnimationValue(vStart,vEnd,time){
+		let t = time;
+		// function: a\left(t\right)=\frac{1}{2}\cdot\left(1+\tanh\left(\ln\left(\frac{t}{1-t}\right)\right)\right)
+		let dv = vEnd-vStart;
+		let basefunction = 0.5*(1+Math.tanh(Math.log(t/(1-t))));
+		return (dv*basefunction)+vStart;
 	}
 
 	//#endregion
@@ -413,7 +484,7 @@ THREE.EDControls = function(camera,scene) {
 
 
 		//Update camera position/rotation;
-		transformCamera();
+		transformCamera(dTime);
 	};
 	//#region Pan Smoothing
 	function calculateCurrentDeltaAnkerPosition(v) {
@@ -501,20 +572,42 @@ THREE.EDControls = function(camera,scene) {
 		return _dAngle_actual;
 	}
 	//#endregion
-	function get2dAngle(x1,x2,y1,y2){
-		let atanX = Math.atan2(x1,x2);
-		let atanY = Math.atan2(y1,y2);
-
-		return atanX - atanY;
-	}
 	//#region Transform Camera
-	function transformCamera() {
+	function transformCamera(deltaTime,forceupdate) {
 		//camera rotation
-		if (_this.needsCameraUpdate()) {
+		if (!cameraTransition.isInTransition&&_this.needsCameraUpdate()) {
 			_camera.rotation.set(_currentCameraRotation.x, _currentCameraRotation.y, _currentCameraRotation.z);
 			 _cameraLookAtAxis = new THREE.Vector3(0,0,-1).applyQuaternion(_camera.quaternion);
 			_camera.position.set(_target.x+_cameraLookAtAxis.x*_distanceToTarget*-1, _target.y+_cameraLookAtAxis.y*_distanceToTarget*-1, _target.z+_cameraLookAtAxis.z*_distanceToTarget*-1);
+		}else if(cameraTransition.isInTransition){
+			let x = (deltaTime/cameraTransition.timeToAnimate) + cameraTransition.currentAnimationTimeValue;
+			if(x >= 1){
+				_currentCameraRotation.set(cameraTransition.desiredRotation.x,cameraTransition.desiredRotation.y,cameraTransition.desiredRotation.z);
+				_camera.rotation.set(_currentCameraRotation.x,_currentCameraRotation.y,_currentCameraRotation.z);
+				_cameraLookAtAxis = new THREE.Vector3(0,0,-1).applyQuaternion(_camera.quaternion);
+				_camera.position.set(cameraTransition.desiredPosition.x,cameraTransition.desiredPosition.y,cameraTransition.desiredPosition.z);
+				_distanceToTarget = cameraTransition.desiredDistance;
+				_target = cameraTransition.anker;
+				cameraTransition.isInTransition = false;
+				console.log(_camera.position);
 
+
+				return;
+			}
+			cameraTransition.currentAnimationTimeValue = x;
+
+			_camera.rotation.set(
+				getAnimationValue(cameraTransition.originalRotation.x,cameraTransition.desiredRotation.x,x),
+				getAnimationValue(cameraTransition.originalRotation.y,cameraTransition.desiredRotation.y,x),
+				getAnimationValue(cameraTransition.originalRotation.z,cameraTransition.desiredRotation.z,x)
+			);
+			_cameraLookAtAxis = new THREE.Vector3(0,0,-1).applyQuaternion(_camera.quaternion);
+			_camera.position.set(
+				getAnimationValue(cameraTransition.originalPosition.x,cameraTransition.desiredPosition.x,x),
+				getAnimationValue(cameraTransition.originalPosition.y,cameraTransition.desiredPosition.y,x),
+				getAnimationValue(cameraTransition.originalPosition.z,cameraTransition.desiredPosition.z,x)
+			);
+			console.log(_camera.position);
 		}
 	}
 	this.needsCameraUpdate = function() {
