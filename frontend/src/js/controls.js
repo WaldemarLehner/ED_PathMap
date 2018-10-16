@@ -112,6 +112,7 @@ THREE.EDControls = function(camera,scene) {
 	var _dZoom_actual = 0;
 	var _dZoom_desired = 0;
 	var _MouseWheelZoom = 0;
+	var _distanceMultiplier = 1;
 	var _oldTime = Date.now(); //:int
 	var _newTime = Date.now(); //:int
 	var _areKeysPressed = {
@@ -210,7 +211,7 @@ THREE.EDControls = function(camera,scene) {
 		onmouseMove(e);
 	});
 	function onmouseWheel(e){
-		_mouse.zoom.toDo += e;
+		_mouse.zoom.toDo += e*_distanceMultiplier*0.1;
 
 	}
 	//1: left click //2: middle click //3: right click
@@ -256,8 +257,6 @@ THREE.EDControls = function(camera,scene) {
 					}else if(rot.x < -1.4){
 						rot.x = -1.4;
 					}
-					console.log(rot.y,rot.x);
-
 				}
 				_currentCameraRotation.set(rot.x,rot.y,rot.z);
 				_mouse.needsUpdate = true;
@@ -266,6 +265,7 @@ THREE.EDControls = function(camera,scene) {
 				let v = 1;
 				let vector = new THREE.Vector3(-dX*v,-dY*v,0);
 				vector.applyQuaternion(_camera.quaternion);
+				vector.multiplyScalar(_distanceMultiplier*0.1);
 				_target.x += vector.x;
 				_target.y += vector.y;
 				_target.z += vector.z;
@@ -382,9 +382,7 @@ THREE.EDControls = function(camera,scene) {
 		_mouse.zoom.toDo = 0;
 	}
 		//#endregion
-
-
-
+		// Rest of mouse calculations are made inside the event listeners
 		//#endregion
 		_mouse.position.before = _mouse.position.now;
 		//Update camera position/rotation;
@@ -409,7 +407,7 @@ THREE.EDControls = function(camera,scene) {
 				_dAngle_desired.y+=z;
 			}
 		}
-		calculateCurrentDeltaRotation((dTime/_this.timeToMaxKeySpeed)*_this.keySpeed.rotate);
+		calculateCurrentDeltaRotation((dTime/_this.timeToMaxKeySpeed)*_this.keySpeed.rotate*_distanceMultiplier);
 		_currentCameraRotation.set(_dAngle_actual.x+_currentCameraRotation.x,_dAngle_actual.y+_currentCameraRotation.y,_dAngle_actual.z+_currentCameraRotation.z);
 		if(_currentCameraRotation.x > 1.4){
 			_currentCameraRotation.x = 1.4;
@@ -451,7 +449,8 @@ THREE.EDControls = function(camera,scene) {
 		//Normalize Vector so that going (for example) front-right is not faster than just front and set it to max speed.
 		//Normalizing gives the vector a length of 1 unit;
 		_dPosition_desired = vector_raw.normalize().multiplyScalar(_this.keySpeed.pan);
-		let pan_vector = calculateCurrentDeltaAnkerPosition((dTime / _this.timeToMaxKeySpeed) * _this.keySpeed.pan);
+		let pan_vector = calculateCurrentDeltaAnkerPosition((dTime / _this.timeToMaxKeySpeed) * _this.keySpeed.pan * _distanceMultiplier/100,dTime);
+		console.log(pan_vector.length());
 		_target.add(pan_vector);
 
 		//#endregion
@@ -465,7 +464,9 @@ THREE.EDControls = function(camera,scene) {
 				_dZoom_desired = _this.keySpeed.zoom;
 			}
 		}
-		_distanceToTarget += calculateCurrentDeltaZoom((dTime/_this.timeToMaxKeySpeed) * _this.keySpeed.zoom);
+		_distanceToTarget += calculateCurrentDeltaZoom((dTime/_this.timeToMaxKeySpeed) * _this.keySpeed.zoom*_distanceMultiplier*0.1);
+		_distanceMultiplier = 0.5*Math.exp(0.0005*_distanceToTarget)+0.003*_distanceToTarget;
+
 		//Clamp value
 		if(_distanceToTarget > _this.maxDistance){
 			_distanceToTarget = _this.maxDistance;
@@ -508,13 +509,13 @@ THREE.EDControls = function(camera,scene) {
 
 	};
 	//#region Pan Smoothing
-	function calculateCurrentDeltaAnkerPosition(v) {
+	function calculateCurrentDeltaAnkerPosition(v,dTime) {
 		let y = _dPosition_desired.y;
 		let _dPosition_desired_noquaternion = _dPosition_desired.clone();
 		_dPosition_desired.applyQuaternion(_camera.quaternion);
 		let vector = _dPosition_actual;
-		let dMultiplication = 0.5;
-		let dMultiplication_braking = 2;
+		let dMultiplication = 0.125*dTime;
+		let dMultiplication_braking = 0.25*dTime;
 		let normalized = new THREE.Vector3(_dPosition_desired.x,y,_dPosition_desired.z).normalize();
 		if(_dPosition_desired.x !== 0 || y !== 0 ||_dPosition_desired.z){
 			if(_dPosition_multiplier < _dPosition_maxSpeed){
@@ -529,14 +530,14 @@ THREE.EDControls = function(camera,scene) {
 					}
 			}
 
-			vector = normalized.multiplyScalar(_dPosition_multiplier);
+			vector = normalized.multiplyScalar(_dPosition_multiplier*v);
 		} else {
 			_dPosition_multiplier -= dMultiplication_braking;
 				if(_dPosition_multiplier < 0){
 					_dPosition_multiplier = 0;
 				}
 
-			vector.normalize().multiplyScalar(_dPosition_multiplier);
+			vector.normalize().multiplyScalar(_dPosition_multiplier*v);
 		}
 
 

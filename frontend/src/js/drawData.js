@@ -41,8 +41,8 @@ function drawData(logList, systemList, connectionList, maxSystemVisitCount, maxC
     // Color values (in hexdec) for maximum and minimum values
   const _COLOR_DEFINITIONS = {min:"#a30000",max:"#00ff00"};
   //#endregion END OF USER SET SETTINGS //
-  var canvas_width = 1440;
-  var canvas_height = 810;
+  var canvas_width = window.innerWidth;
+  var canvas_height = window.innerHeight;
   var updatePointsThisCycle = false;
 
   if(typeof maxSystemVisitCount === "undefined"){
@@ -62,7 +62,7 @@ function drawData(logList, systemList, connectionList, maxSystemVisitCount, maxC
 _systemList = systemList;
 _connectionList = connectionList;
   var isDefaultSceneDrawn = true;
-//Settings up canvas end adding it to the HTML document
+//Settings up canvas and adding it to the HTML document
   var scene_skybox = new THREE.Scene();
   var scene_main = new THREE.Scene();
   var scene_ui = new THREE.Scene();
@@ -451,5 +451,10 @@ function update(){
 window.canvasInterface = new PATHMAP.Interface(camera,[scene_skybox,scene_main,scene_ui],controls,linesRef,pointsRef);
 //Start with animation loop
 animate();
+window.addEventListener("resize",function(){
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth,window.innerHeight);
+},false);
 //#endregion
 }
