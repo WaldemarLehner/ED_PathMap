@@ -57,7 +57,7 @@ THREE.EDControls = function(camera,scene) {
 		let rotDesired = angle;
 		let zoomDesired = distance;
 		let desiredLookAtAxis = new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().setFromEuler(rotDesired));
-		console.log(desiredLookAtAxis);
+
 
 		if(typeof timeToAnimate === "number"){
 			if(timeToAnimate > 0){
@@ -250,6 +250,14 @@ THREE.EDControls = function(camera,scene) {
 
 					rot.y -= dX*v;
 					rot.x += dY*v;
+					//clamp check
+					if(rot.x > 1.4){
+						rot.x = 1.4;
+					}else if(rot.x < -1.4){
+						rot.x = -1.4;
+					}
+					console.log(rot.y,rot.x);
+
 				}
 				_currentCameraRotation.set(rot.x,rot.y,rot.z);
 				_mouse.needsUpdate = true;
@@ -360,6 +368,27 @@ THREE.EDControls = function(camera,scene) {
 		if (dTime > 1000) {
 			return; /*do nothing*/
 		}
+		//#region MOUSE FUNCTIONALITY
+		//#region [Mouse] Zoom
+		if(_mouse.zoom.toDo !== 0){
+		_mouse.needsUpdate = true;
+		_distanceToTarget += _mouse.zoom.toDo;
+		//Clamp
+		if(_distanceToTarget > _this.maxDistance){
+			_distanceToTarget = _this.maxDistance;
+		}else if(_distanceToTarget < _this.minDistance){
+			_distanceToTarget = _this.minDistance;
+		}
+		_mouse.zoom.toDo = 0;
+	}
+		//#endregion
+
+
+
+		//#endregion
+		_mouse.position.before = _mouse.position.now;
+		//Update camera position/rotation;
+		transformCamera(dTime);
 		//#region KEY FUNCTIONALITY
 		//#region Key Functionality [Rotation]
 		_dAngle_desired = new THREE.Euler();
@@ -448,22 +477,19 @@ THREE.EDControls = function(camera,scene) {
 		}
 		//#endregion
 		//#endregion
-		//#region MOUSE FUNCTIONALITY
-		//#region [Mouse] Zoom
-		if(_mouse.zoom.toDo !== 0){
-		_mouse.needsUpdate = true;
-		_distanceToTarget += _mouse.zoom.toDo;
-		_mouse.zoom.toDo = 0;
-	}
+
+		//#endregion
+
 		//#endregion
 
 
 
-		//#endregion
-		_mouse.position.before = _mouse.position.now;
-		//#endregion
 		//#region UI
-		_indicatorGroup.position.set(_target.x,_target.y,_target.z);
+		//Set indicator x units in front of camera.
+
+		let indicatorGroupPosition = new THREE.Vector3(_camera.position.x,_camera.position.y,_camera.position.z).add(new THREE.Vector3(_cameraLookAtAxis.x,_cameraLookAtAxis.y,_cameraLookAtAxis.z).multiplyScalar(80));
+
+		_indicatorGroup.position.set(indicatorGroupPosition.x,indicatorGroupPosition.y,indicatorGroupPosition.z);
 		_ui.focus.arrow_vert.rotation.setFromQuaternion(_camera.quaternion,"YXZ");
 		_ui.focus.arrow_vert.rotation.x = 0;
 		if(_dPosition_actual.x === 0 && _dPosition_actual.z === 0 && _dAngle_actual.y === 0){
@@ -480,15 +506,11 @@ THREE.EDControls = function(camera,scene) {
 		}
 		//#endregion
 
-		//#endregion
-
-
-		//Update camera position/rotation;
-		transformCamera(dTime);
 	};
 	//#region Pan Smoothing
 	function calculateCurrentDeltaAnkerPosition(v) {
 		let y = _dPosition_desired.y;
+		let _dPosition_desired_noquaternion = _dPosition_desired.clone();
 		_dPosition_desired.applyQuaternion(_camera.quaternion);
 		let vector = _dPosition_actual;
 		let dMultiplication = 0.5;
@@ -506,16 +528,21 @@ THREE.EDControls = function(camera,scene) {
 						_dPosition_multiplier = 0;
 					}
 			}
+
 			vector = normalized.multiplyScalar(_dPosition_multiplier);
 		} else {
 			_dPosition_multiplier -= dMultiplication_braking;
 				if(_dPosition_multiplier < 0){
 					_dPosition_multiplier = 0;
 				}
+
 			vector.normalize().multiplyScalar(_dPosition_multiplier);
-			}
+		}
 
 
+		if(_dPosition_desired_noquaternion.x === 0 && _dPosition_desired_noquaternion.z === 0 && _dPosition_desired_noquaternion.y !== 0){
+			vector.x = vector.z = 0;
+		}
 		_dPosition_actual = vector;
 
 		//Angle → cos(alpha) = (vA * vB)/(|vA|*|vB|)
@@ -589,7 +616,6 @@ THREE.EDControls = function(camera,scene) {
 				_distanceToTarget = cameraTransition.desiredDistance;
 				_target = cameraTransition.anker;
 				cameraTransition.isInTransition = false;
-				console.log(_camera.position);
 
 
 				return;
@@ -607,7 +633,7 @@ THREE.EDControls = function(camera,scene) {
 				getAnimationValue(cameraTransition.originalPosition.y,cameraTransition.desiredPosition.y,x),
 				getAnimationValue(cameraTransition.originalPosition.z,cameraTransition.desiredPosition.z,x)
 			);
-			console.log(_camera.position);
+
 		}
 	}
 	this.needsCameraUpdate = function() {
