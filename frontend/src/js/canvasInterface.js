@@ -72,7 +72,7 @@ PATHMAP.Interface = function(camera,scenes,controls,linesref,pointsref){
 		else{
 			throw "first parameter needs to be the position. This has to be a new THREE.Vector3. This parameter is is not optional.";
 		}
-		if(Distance instanceof number){
+		if(typeof Distance === "number"){
 			if(Distance < 0){
 				dist = -Distance;
 				console.warn("Second parameter is negative. Multiplying by -1");
