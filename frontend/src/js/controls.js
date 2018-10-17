@@ -438,7 +438,7 @@ THREE.EDControls = function(camera,scene) {
 				_dAngle_desired.y+=z;
 			}
 		}
-		calculateCurrentDeltaRotation((dTime/_this.timeToMaxKeySpeed)*_this.keySpeed.rotate*_distanceMultiplier);
+		calculateCurrentDeltaRotation((dTime/_this.timeToMaxKeySpeed)*_this.keySpeed.rotate);
 		_currentCameraRotation.set(_dAngle_actual.x+_currentCameraRotation.x,_dAngle_actual.y+_currentCameraRotation.y,_dAngle_actual.z+_currentCameraRotation.z);
 		if(_currentCameraRotation.x > 1.4){
 			_currentCameraRotation.x = 1.4;
