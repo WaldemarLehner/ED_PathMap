@@ -41,8 +41,8 @@ function drawData(logList, systemList, connectionList, maxSystemVisitCount, maxC
     // Color values (in hexdec) for maximum and minimum values
   const _COLOR_DEFINITIONS = {min:"#a30000",max:"#00ff00"};
   //#endregion END OF USER SET SETTINGS //
-  var canvas_width = 1440;
-  var canvas_height = 810;
+  var canvas_width = window.innerWidth;
+  var canvas_height = window.innerHeight;
   var updatePointsThisCycle = false;
 
   if(typeof maxSystemVisitCount === "undefined"){
@@ -62,9 +62,10 @@ function drawData(logList, systemList, connectionList, maxSystemVisitCount, maxC
 _systemList = systemList;
 _connectionList = connectionList;
   var isDefaultSceneDrawn = true;
-//Settings up canvas end adding it to the HTML document
+//Settings up canvas and adding it to the HTML document
   var scene_skybox = new THREE.Scene();
   var scene_main = new THREE.Scene();
+  var scene_ui = new THREE.Scene();
   var camera = new THREE.PerspectiveCamera( 80, canvas_width/canvas_height,0.1,600000);
   camera.position.set(0.5,0.2,0.1);
   var renderer = new THREE.WebGLRenderer();
@@ -149,6 +150,7 @@ let _scale = chroma.scale([_COLOR_DEFINITIONS.min,_COLOR_DEFINITIONS.max]).mode(
       geometry.addAttribute("position",new THREE.BufferAttribute(vertices,3));
       let object = new THREE.Line(geometry,material);
       object.name = entry;
+      group.userData = {lockVisibility:false};
       group.add(object);
       linesRef[sectorName] = group;
     }
@@ -324,8 +326,8 @@ function updateLOD(bool){
       if(dist < _USER_SECTOR_POINTS_RENDER_LOD1_DISTANCE){
         if(pointsRef[entry].userData.lodState !== 0){
           pointsRef[entry].userData.lodState = 0;
-          e.children[0].visible = true;
-          e.children[1].visible = false;
+            e.children[0].visible = true;
+            e.children[1].visible = false;
           if(_USER_DEBUG){
             e.children[0].children.forEach(function(entry){
               entry.material.color.setHex(0x00FF00);
@@ -343,8 +345,8 @@ function updateLOD(bool){
             });
           }
           pointsRef[entry].userData.lodState = 1;
-          e.children[0].visible = false;
-          e.children[1].visible = true;
+            e.children[0].visible = false;
+            e.children[1].visible = true;
           if(_USER_DEBUG){
             e.children[1].children.forEach(function(entry){
               entry.material.color.setHex(0x00FFFF);
@@ -356,13 +358,13 @@ function updateLOD(bool){
       else{
         if(pointsRef[entry].userData.lodState !== 2){
           pointsRef[entry].userData.lodState = 2;
-          e.children[0].visible = false;
-          e.children[1].visible = true;
+            e.children[0].visible = false;
+            e.children[1].visible = true;
           e.children[1].children.forEach(function(element){
             if(_USER_DEBUG){
               element.material.color.setHex(0xFFFF00);
             }
-            if(element.visible){
+            if(!element.visible){
               element.visible = true;
             }
             if(Math.random() > _USER_SECTOR_POINTS_RENDER_LOD2_PERCENTAGE/100){
@@ -379,66 +381,19 @@ function updateLOD(bool){
   else{
     updatePointsThisCycle = true;
     //Lines Handling
-
-
     for(let entry in linesRef){
       let dist = linesRef[entry].position.distanceTo(camera.position);
-      if(dist > _USER_SECTOR_LINES_RENDER_DISTANCE){
-        //Dont render sector
-        linesRef[entry].visible = false;
-      }else{
-        linesRef[entry].visible = true;
-
+      if(linesRef[entry].userData.lockVisibility === false){
+        if(dist > _USER_SECTOR_LINES_RENDER_DISTANCE){
+          //Dont render sector
+          linesRef[entry].visible = false;
+        }else{
+          linesRef[entry].visible = true;
+        }
       }
     }
   }
 }
-//#endregion
-//#region Color/Size Calculations
-  function getMaterialByCount(count,isPoint){
-    let _scale = chroma.scale([_COLOR_DEFINITIONS.min,_COLOR_DEFINITIONS.max]).mode("lrgb");
-    if(isPoint){
-      //Point handling
-      let fraction = (((count-1 / maxSystemVisitCount-1)*0.1) > 1) ? 1 : ((count-1/maxSystemVisitCount-1)*0.1);
-      let color = _scale(fraction).hex();
-      let size;
-      if(_USER_VISIT_AFFECT_POINT_SIZE){
-        size = _SIZE_DEFINITIONS.point.min + fraction * _SIZE_DEFINITIONS.point.max;
-      }
-      else{
-        size = _SIZE_DEFINITIONS.point.default;
-      }
-      //return new THREE.PointsMaterial({color:color,size:size});
-      //Generate Canvas for round dot
-      let c = document.createElement("canvas");
-      let ctx_size = 20;
-      c.width = c.height = ctx_size;
-      let ctx = c.getContext("2d");
-      let texture = new THREE.Texture(c);
-      ctx.beginPath();
-      ctx.arc(ctx_size/2,ctx_size/2,ctx_size/2,0,2*Math.PI,false);
-      ctx.fillStyle = color;
-      ctx.fill();
-      texture.needsUpdate = true;
-      if(texture.minFilter !== THREE.NearestFilter && texture.minFilter !== THREE.LinearFilter){
-        texture.minFilter = THREE.NearestFilter;
-      }
-      return new THREE.PointsMaterial({size:size,map:texture,transparent:true,depthWrite:false});
-    }
-    else{
-      //Line handling
-      let fraction = (((count-1 / maxConnectionVisitCount-1)*0.1) > 1) ? 1 : ((count-1/maxConnectionVisitCount-1)*0.1);
-      let color = _scale(fraction).hex();
-      let size;
-      if(_USER_VISIT_AFFECT_LINE_SIZE){
-        size = _SIZE_DEFINITIONS.line.min + fraction * _SIZE_DEFINITIONS.line.max;
-      }
-      else{
-        size = _SIZE_DEFINITIONS.line.default;
-      }
-      return new THREE.LineBasicMaterial({color:color,linewidth:size,opacity:0.5+(fraction/2),transparent:true});
-    }
-  }
 //#endregion
 //#region Skybox
 let skybox_material_data = [
@@ -455,7 +410,7 @@ skybox.rotation.set(0,-Math.PI/2,0);
 
 
 scene_skybox.add(skybox);
-scene_skybox.add(new THREE.AmbientLight(0xFFFFFF,0.3));
+//scene_skybox.add(new THREE.AmbientLight(0xFFFFFF,0.3));
 //#endregion
 //#region Galactic Plane
 //Draw a galactic plane
@@ -467,7 +422,7 @@ scene_skybox.add(galplane);
 //#endregion
 //#region Controls
 //Controls Setup
-controls = new THREE.EDControls( camera , scene_main);
+var controls = new THREE.EDControls( camera , scene_main);
 controls.minDistance = 10;
 controls.maxDistance = 10000;
 
@@ -484,12 +439,22 @@ function animate(){
     renderer.render(scene_skybox,camera);
     renderer.clearDepth();
     renderer.render(scene_main,camera);
+    renderer.clearDepth();
+    renderer.render(scene_ui,camera);
     controls.update();
   }
 }
 function update(){
-  skybox.position.set(camera.position.x,camera.position.y,camera.position.z) ;
+  skybox.position.set(camera.position.x,camera.position.y,camera.position.z);
 }
+//Add an Interface to global scope
+window.canvasInterface = new PATHMAP.Interface(camera,[scene_skybox,scene_main,scene_ui],controls,linesRef,pointsRef);
+//Start with animation loop
 animate();
+window.addEventListener("resize",function(){
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth,window.innerHeight);
+},false);
 //#endregion
 }
