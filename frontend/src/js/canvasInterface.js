@@ -64,7 +64,7 @@ PATHMAP.Interface = function(camera,scenes,controls,linesref,pointsref){
 			return this;
 		}
 	};
-	this.focusCamera = function(vPos,Distance,eEuler){
+	this.focusCamera = function(vPos,Distance,eEuler,time){
 		let _pos,dist,euler;
 		if(vPos instanceof THREE.Vector3){
 			_pos = vPos;
@@ -93,7 +93,7 @@ PATHMAP.Interface = function(camera,scenes,controls,linesref,pointsref){
 		}else{
 			eEuler = null;
 		}
-		_controls.focusAt(_pos,dist,euler);
+		_controls.focusAt(_pos,dist,euler,time);
 	};
 	this.showSystemDots = function(bool){
 		if(typeof bool !== "boolean"){
