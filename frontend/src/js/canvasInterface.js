@@ -68,6 +68,7 @@ PATHMAP.Interface = function(camera,scenes,controls,linesref,pointsref){
 		let _pos,dist,euler;
 		if(vPos instanceof THREE.Vector3){
 			_pos = vPos;
+			_pos.x *= -1;
 		}
 		else{
 			throw "first parameter needs to be the position. This has to be a new THREE.Vector3. This parameter is is not optional.";

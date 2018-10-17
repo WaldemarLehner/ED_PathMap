@@ -6,51 +6,37 @@ Requires jQuery
 
 //eventListeners
 $(document).ready(function(){
-  $("#fileinput").on("click",importFile);
+  $("#fileinput_init").on("click",importFile);
 
 });
 
 
 function importFile(){
 
-  let file_log = document.getElementById("fileinput_travellog").files[0];
-  let file_syslist = document.getElementById("fileinput_sysmap").files[0];
-  if(file_log === undefined || file_log === null){
+  let file_input = document.getElementById("fileinput").files[0];
+  if(file_input === undefined || file_input === null){
     UI.createError("No file has been selected.",1000);
     return undefined; //cancel operation
   }
-  if(file_log.type != "application/json"){
+  if(file_input.type != "application/json"){
     UI.createError("Selected file is not in JSON format.",1000);
     return undefined;
   }
 
-  if(file_syslist === undefined || file_syslist === null){
-    UI.createError("No file has been selected.",1000);
-    return undefined; //cancel operation
-  }
-  if(file_syslist.type != "application/json"){
-    UI.createError("Selected file is not in JSON format.",1000);
-    return undefined;
-  }
-
-  let filereader_logs = new FileReader();
-  let filereader_syslist = new FileReader();
-  filereader_logs.onload = function(event_logs){
-
-    filereader_syslist.onload = function(event_syslist){
-
-      filterData(JSON.parse(event_logs.srcElement.result).logs.reverse(),JSON.parse(event_syslist.srcElement.result));
-    };
-    filereader_syslist.readAsText(file_syslist);
+  let filereader = new FileReader();
+  $("#fileinput_label").remove();
+  $("#fileinput").remove();
+  $("#fileinput_init").remove();
+  $("#settings").hide();
+  filereader.onload = function(event_logs){
+      filterData(JSON.parse(event_logs.srcElement.result));
 
   };
-  filereader_logs.readAsText(file_log);
-
-
-
+  filereader.readAsText(file_input);
 }
 
-function filterData(json_data,json_syslist){
+function filterData(json_data){
+
   //SysLog is the travel log described in the get-logs.json
   var syslog = [];
   //SysList is an object of all needed systems with x y z and the amount of travels through said system
@@ -62,28 +48,27 @@ function filterData(json_data,json_syslist){
   var conMaxCount = 0;
 
   //Generate a syslist object
-  json_syslist.forEach(function(entry){
+  json_data.forEach(function(entry){
     var system = {
-        x:entry.Coords.X,
-        y:entry.Coords.Y,
-        z:entry.Coords.Z,
-        name: entry.Name
+        x:entry.x/32,
+        y:entry.y/32,
+        z:entry.z/32,
+        name: entry.name
       };
     system.count = 0;
-    syslist[entry.Name] = system;
+    syslist[entry.name] = system;
   });
 
   //Filter out unnecessary data from log and get system count data
   json_data.forEach(function(entry){
-    syslog.push({name:entry.system,date:entry.date});
-    if(typeof syslist[entry.system] !== "undefined"){
-      syslist[entry.system].count++;
-      if(syslist[entry.system].count > sysMaxCount){
-        sysMaxCount = syslist[entry.system].count;
+    syslog.push({name:entry.name,date:entry.dateVisited});
+    if(typeof syslist[entry.name] !== "undefined"){
+      syslist[entry.name].count++;
+      if(syslist[entry.name].count > sysMaxCount){
+        sysMaxCount = syslist[entry.name].count;
       }
     }
   });
-  //console.log(syslist);
 
   //Generate a list of all connections
   for(let i = 0; i < syslog.length-1;i++){
@@ -129,6 +114,7 @@ function filterData(json_data,json_syslist){
     }
 
   }
+
 //Send prepared data over to drawData.js for map generation.
   drawData(syslog,syslist,sysconnections,sysMaxCount,conMaxCount);
 }
