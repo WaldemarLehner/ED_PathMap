@@ -24,11 +24,10 @@
   <div class="content">
     <div id="settings">
 
-        <label for="log">Travellog</label>
-        <input type="file" id="fileinput_travellog" name="log"  accept=".json,application/json" />
-        <label for="sysMap">Systemmap</label>
-        <input type="file" id="fileinput_sysmap" name="sysMap"  accept=".json,application/json" />
-        <button id="fileinput">Start</button>
+        <label id="fileinput_label" for="log">EDSM log</label>
+        <input type="file" id="fileinput" name="log"  accept=".json,application/json" />
+
+        <button id="fileinput_init">Start</button>
 
     </div>
     <div id="3d_container" class="hidden" oncontextmenu="return false;">
