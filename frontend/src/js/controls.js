@@ -43,18 +43,9 @@ THREE.EDControls = function(camera,scene) {
 			throw "distance needs to type of Number";
 		}
 		if(!(angle instanceof THREE.Euler)){
-			//calculate desired angle by getting current position
-			//TODO: get this to work lel
-			let currentPos = _camera.position.clone();
-			let currentRot = _camera.rotation;
-			let vDirection = new THREE.Vector3(-_camera.position.x+vector3.x,-_camera.position.y+vector3.y,-_camera.position.z+vector3.z).normalize();
-			console.log("vDir:",vDirection);
-			let q = new THREE.Quaternion().setFromUnitVectors(vDirection,new THREE.Vector3(0,0,1));
-			angle = new THREE.Euler().setFromQuaternion(q,"YXZ");
-			angle.z = 0;
-			console.log(new THREE.Vector3(0,0,-1).applyQuaternion(q));
-			//TODO: Only pitch works as intended. 
-		}
+			//use camera orientation
+				angle = _camera.rotation;
+			}
 		//current values
 		let posActual = new THREE.Vector3();
 		let rotActual =  _currentCameraRotation;
