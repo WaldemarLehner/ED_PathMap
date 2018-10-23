@@ -157,7 +157,6 @@ let _scale = chroma.scale([_COLOR_DEFINITIONS.min,_COLOR_DEFINITIONS.max]).mode(
     catch(e){
       console.warn("Could not load connection");
       console.warn(e);
-      //TODO: For some mysterious reason some systems do not exist in systemList. Black magic? They are in the SQLite DB and in the logs, but not in requiredSystems. So it's probably something in the c# program, which shouldnt be an issue when using a server, i hope.
     }
   }
 
@@ -448,7 +447,8 @@ function update(){
   skybox.position.set(camera.position.x,camera.position.y,camera.position.z);
 }
 //Add an Interface to global scope
-window.canvasInterface = new PATHMAP.Interface(camera,[scene_skybox,scene_main,scene_ui],controls,linesRef,pointsRef);
+window.canvasInterface = new PATHMAP.Interface(camera,[scene_skybox,scene_main,scene_ui],controls,linesRef,pointsRef,logList,systemList);
+
 //Start with animation loop
 animate();
 window.addEventListener("resize",function(){

@@ -10,19 +10,7 @@ $(document).ready(function(){
 });
 
 
-//< Define UI Class
 
-class UI{
-  static createError(errorText,durationInMs){
-    //TODO
-  }
-  static createWarning(errorText,durationInMs){
-    //TODO
-  }
-  static createInfo(errorText,durationInMs){
-    //TODO
-  }
-}
 class Loader{
   static isLoaderActive(boolean){
     if(typeof boolean !== "boolean"){
