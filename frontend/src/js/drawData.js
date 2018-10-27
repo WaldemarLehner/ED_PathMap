@@ -30,7 +30,7 @@ function drawData(logList, systemList, connectionList, maxSystemVisitCount, maxC
     // Should the points and lines have a identical color scale? Will use the highest value from maxSystemVisitCount / maxConnectionVisitCount
   const _USER_USE_IDENTICAL_SCALE = false;
     //Should the maxSystemVisitCount/maxConnectionVisitCount be overwritten?
-  const _USER_OVERRIDE_MAX_COUNT = true;
+  const _USER_OVERRIDE_MAX_COUNT = false;
   const _USER_OVERRIDE_DEFINITIONS = {system:50,connection:10};
   // Should point/line size be affected by times visited?
   const _USER_VISIT_AFFECT_POINT_SIZE = true;
@@ -163,7 +163,8 @@ let _scale = chroma.scale([_COLOR_DEFINITIONS.min,_COLOR_DEFINITIONS.max]).mode(
 //#endregion
 //#region Draw System Dots
 //Generate the Base Materials
-let systemDotTextureList = {};
+let systemDotTextureList = generateDotTextures(maxSystemVisitCount,maxConnectionVisitCount);
+console.log(systemDotTextureList);
 systemDotTextureList.high = generateLOD0DotTexture();
 function generateLOD0DotTexture(){
   let c = document.createElement("canvas");
@@ -180,6 +181,33 @@ function generateLOD0DotTexture(){
     texture.minFilter = THREE.NearestFilter;
   }
   return new THREE.PointsMaterial({size:1,color:0xFFFFFF,map:texture,transparent:true,depthWrite:false});
+}
+function generateDotTextures(sysCount,connCount){
+  let mat_group_points_LOD0 = [];
+  let mat_group_points_LOD1 = [];
+  //Generate LOD0 textures for systems that have been visited 1 times → sysCount Times
+  for(let i = 0; i < sysCount;i++){
+    let fraction = (((i-1 / sysCount-1)*0.1) > 1) ? 1 : ((i-1/sysCount-1)*0.1);
+    let c = document.createElement("canvas");
+    let ctx_size = 32;
+    c.width = c.height = ctx_size;
+    let ctx = c.getContext("2d");
+    let tex = new THREE.Texture(c);
+    ctx.beginPath();
+    ctx.arc(ctx_size/2,ctx_size/2,ctx_size/2-2,0,2*Math.PI,false);
+    ctx.fillStyle = _scale(fraction).hex();
+    ctx.fill();
+    tex.needsUpdate = true;
+    if(tex.minFilter !== THREE.NearestFilter && tex.minFilter !== THREE.LinearFilter){
+      tex.minFilter = THREE.NearestFilter;
+    }
+    let size =  (_USER_VISIT_AFFECT_POINT_SIZE) ? ( _SIZE_DEFINITIONS.point.min + fraction * _SIZE_DEFINITIONS.point.max) : (_SIZE_DEFINITIONS.point.default);
+    let mat0 = new THREE.PointsMaterial({size:size,color:0xFFFFFF,map:tex,transparent:true,depthWrite:false});
+    mat_group_points_LOD0[i] = mat0;
+    let mat1 = new THREE.PointsMaterial({size:size,color: _scale(fraction).num()});
+    mat_group_points_LOD1[i] = mat1;
+  }
+  return [mat_group_points_LOD0,mat_group_points_LOD1];
 }
 // ---
 
