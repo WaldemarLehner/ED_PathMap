@@ -273,23 +273,64 @@ console.log(pointSectors);
 //Iterate through all sectors and generate 2 merged geometries (LOD0+LOD1,LOD2) and generate 3 Points objects
 for(let sector in pointSectors){
   if(!pointSectors.hasOwnProperty(sector)){continue;}
-  let geometryLOD0 = new THREE.Geometry();
-  let geometryLOD2 = new THREE.Geometry();
+  let geometryLOD0 = new THREE.BufferGeometry();
+  let geometryLOD2 = new THREE.BufferGeometry();
+  //position component
+  let geoLOD0Vertices = [];
+  let geoLOD2Vertices = [];
+  //color component
+  let geoLOD0Colors = [];
+  let geoLOD2Colors = [];
+  //size component
+  let geoLOD0Size = [];
   for(let sysIndex = 0;sysIndex < pointSectors[sector].length;sysIndex++){
-    let c = pointSectors[sector][sysIndex].coords;
-    //Add points to LOD0/LOD1
-    geometryLOD0.vertices.push(new THREE.Vector3(c.x,c.y,c.z));
+    let c = pointSectors[sector][sysIndex];
+    let sysCount = maxSystemVisitCount;
+    let fraction = (((c.count-1 / sysCount-1)*0.1) > 1) ? 1 : ((c.count-1/sysCount-1)*0.1);
+    let color = new THREE.Color(_scale(fraction).num());
+    let size =  (_USER_VISIT_AFFECT_POINT_SIZE) ? ( _SIZE_DEFINITIONS.point.min + fraction * _SIZE_DEFINITIONS.point.max) : (_SIZE_DEFINITIONS.point.default);
+    //-----
+    geoLOD0Vertices.push(c.coords.x-_USER_SECTOR_SIZE,c.coords.y-_USER_SECTOR_SIZE,c.coords.z-_USER_SECTOR_SIZE);
+    geoLOD0Colors.push(color.r,color.g,color.b);
+    geoLOD0Size.push(size);
     //Have a chance to add to LOD2 aswell
     if( Math.random() < _USER_SECTOR_POINTS_RENDER_LOD2_PERCENTAGE/100 ){
-      geometryLOD2.vertices.push(new THREE.Vector3(c.x,c.y,c.z));
+      geoLOD2Vertices.push(c.coords.x-_USER_SECTOR_SIZE,c.coords.y-_USER_SECTOR_SIZE,c.coords.z-_USER_SECTOR_SIZE);
+      geoLOD2Colors.push(color.r,color.g,color.b);
     }
   }
-  //TODO: change back later on
-  let pointsLOD0 = new THREE.Points(geometryLOD0,systemDotTextureList[0]);
-  let pointsLOD1 = new THREE.Points(geometryLOD0,systemDotTextureList[1]);
-  let pointsLOD2 = new THREE.Points(geometryLOD2,systemDotTextureList[1]);
+  //LOD 0
+  geometryLOD0.addAttribute("position",new THREE.Float32BufferAttribute(geoLOD0Vertices,3));
+  geometryLOD0.addAttribute("color",new THREE.Float32BufferAttribute(geoLOD0Colors,3));
+  geometryLOD0.addAttribute("size",new THREE.Float32BufferAttribute(geoLOD0Size,1));
+  geometryLOD0.computeBoundingSphere();
+  //LOD 2
+  geometryLOD2.addAttribute("position",new THREE.Float32BufferAttribute(geoLOD2Vertices,3));
+  geometryLOD2.addAttribute("color",new THREE.Float32BufferAttribute(geoLOD2Colors,3));
+  geometryLOD2.computeBoundingSphere();
+  //Wait for all shaders to load - if it takes longer than 5 s → throw error
+  let t0 = Date.now();
+  while(typeof __SHADERS.LOD0.vertex === "undefined" || typeof __SHADERS.LOD0.fragment === "undefined"){
+    if(Date.now()-t0 > 5000){
+      throw "Could not retrieve Shader files.";
+    }
+  }
+  let LOD0Shader = new THREE.ShaderMaterial({
+    vertexShader: __SHADERS.LOD0.vertex,
+    fragmentShader: __SHADERS.LOD0.fragment,
+    uniforms:{
+      map:{
+        value:systemDotTextureList[0][0]
+      }
+    }
+  });
+
+  let pointsLOD0 = new THREE.Points(geometryLOD0,LOD0Shader);
+  let pointsLOD1 = new THREE.Points(geometryLOD0,systemDotTextureList[1][10]);
+  let pointsLOD2 = new THREE.Points(geometryLOD2,systemDotTextureList[1][5]);
   pointsLOD0.visible = true;
-  pointsLOD1.visible = pointsLOD2.visible = false;
+  pointsLOD1.visible = false;
+  pointsLOD2.visible = false;
   let root = new THREE.Group();
   //get Sector coordinates
   let sectorCoords = sector.split(":");
@@ -297,9 +338,9 @@ for(let sector in pointSectors){
     sectorCoords[i] = Number(sectorCoords[i]);
   }
 
-  let posX = ((sectorCoords[0] * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.x)-0.5*_USER_SECTOR_SIZE;
-  let posY = ((sectorCoords[1] * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.y)-0.5*_USER_SECTOR_SIZE;
-  let posZ = ((sectorCoords[2] * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.z)-0.5*_USER_SECTOR_SIZE;
+  let posX = ((sectorCoords[0] * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.x)+0.5*_USER_SECTOR_SIZE;
+  let posY = ((sectorCoords[1] * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.y)+0.5*_USER_SECTOR_SIZE;
+  let posZ = ((sectorCoords[2] * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.z)+0.5*_USER_SECTOR_SIZE;
   root.position.set(posX,posY,posZ);
   root.add(pointsLOD0);
   root.add(pointsLOD1);
@@ -349,8 +390,7 @@ for(let entry in pointsRef){
   }
   scene_main.add(pointsRef[entry]);
 }
-//get System Calculation on init
-
+//get LOD calculations when initializing
 for(let entry in pointsRef){
   if(!pointsRef.hasOwnProperty(entry)){
     continue;
@@ -360,38 +400,19 @@ for(let entry in pointsRef){
     pointsRef[entry].userData.lodState = 0;
     pointsRef[entry].children[0].visible = true;
     pointsRef[entry].children[1].visible = false;
-    if(_USER_DEBUG){
-      pointsRef[entry].children[0].children.forEach(function(e){
-        e.material.color.setHex(0x00FF00);
-      });
-    }
+    pointsRef[entry].children[2].visible = false;
   }
   else if(dist < _USER_SECTOR_POINTS_RENDER_LOD2_DISTANCE){
     pointsRef[entry].userData.lodState = 1;
     pointsRef[entry].children[0].visible = false;
     pointsRef[entry].children[1].visible = true;
-    if(_USER_DEBUG){
-      pointsRef[entry].children[1].children.forEach(function(e){
-        e.material.color.setHex(0x00FFFF);
-      });
-    }
+    pointsRef[entry].children[1].visible = false;
   }
   else{
     pointsRef[entry].userData.lodState = 2;
     pointsRef[entry].children[0].visible = false;
-    pointsRef[entry].children[1].visible = true;
-    pointsRef[entry].children[1].children.forEach(function(e){
-      e.visible = true;
-      let x = Math.random();
-      if(x > _USER_SECTOR_POINTS_RENDER_LOD2_PERCENTAGE/100){
-        e.visible = false;
-      }
-    });
-    if(_USER_DEBUG){
-      pointsRef[entry].children[1].children.forEach(function(e){
-        e.material.color.setHex(0xFFFF00);
-      });
-    }
+    pointsRef[entry].children[1].visible = false;
+    pointsRef[entry].children[2].visible = true;
   }
 }
 
@@ -416,54 +437,25 @@ function updateLOD(bool){
           pointsRef[entry].userData.lodState = 0;
             e.children[0].visible = true;
             e.children[1].visible = false;
-          if(_USER_DEBUG){
-            e.children[0].children.forEach(function(entry){
-              entry.material.color.setHex(0x00FF00);
-            });
-          }
+            e.children[2].visible = false;
         }
       }
       else if(dist < _USER_SECTOR_POINTS_RENDER_LOD2_DISTANCE){
         if(pointsRef[entry].userData.lodState !== 1){
           if(pointsRef[entry].userData.lodState === 2){
-            e.children[1].children.forEach(function(entry){
-              if(!entry.visible){
-                entry.visible = true;
-              }
-            });
-          }
-          pointsRef[entry].userData.lodState = 1;
-            e.children[0].visible = false;
+            e.userData.lodState = 1;
+            e.children[0].visible = e.children[2].visible = false;
             e.children[1].visible = true;
-          if(_USER_DEBUG){
-            e.children[1].children.forEach(function(entry){
-              entry.material.color.setHex(0x00FFFF);
-            });
           }
         }
-
       }
       else{
         if(pointsRef[entry].userData.lodState !== 2){
           pointsRef[entry].userData.lodState = 2;
-            e.children[0].visible = false;
-            e.children[1].visible = true;
-          e.children[1].children.forEach(function(element){
-            if(_USER_DEBUG){
-              element.material.color.setHex(0xFFFF00);
-            }
-            if(!element.visible){
-              element.visible = true;
-            }
-            if(Math.random() > _USER_SECTOR_POINTS_RENDER_LOD2_PERCENTAGE/100){
-              element.visible = false;
-            }
-          });
+            e.children[0].visible = e.children[1].visible = false;
+            e.children[2].visible = true;
         }
-
       }
-
-
     }
   }
   else{

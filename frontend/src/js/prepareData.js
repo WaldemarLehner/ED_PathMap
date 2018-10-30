@@ -6,6 +6,22 @@ Requires jQuery
 
 //eventListeners
 $(document).ready(function(){
+  //load shaders
+  __SHADERS = {LOD0:{}};
+  $.ajax({
+    url:"/src/shader/pointsLOD0_fragment.glsl",
+    context: document.body,
+    dataType: "text"
+  }).done(function(data){
+    __SHADERS.LOD0.fragment = data;
+  });
+  $.ajax({
+    url:"/src/shader/pointsLOD0_vertex.glsl",
+    context: document.body,
+    dataType: "text"
+  }).done(function(data){
+    __SHADERS.LOD0.vertex = data;
+  });
   $("#fileinput_init").on("click",importFile);
 
 });
