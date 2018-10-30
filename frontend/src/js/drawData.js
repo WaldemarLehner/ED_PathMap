@@ -162,11 +162,11 @@ let _scale = chroma.scale([_COLOR_DEFINITIONS.min,_COLOR_DEFINITIONS.max]).mode(
 
 //#endregion
 //#region Draw System Dots
-//Generate the Base Materials
+//#region pregenerate required materials
 let systemDotTextureList = generateDotTextures(maxSystemVisitCount,maxConnectionVisitCount);
 console.log(systemDotTextureList);
-systemDotTextureList.high = generateLOD0DotTexture();
-function generateLOD0DotTexture(){
+//systemDotTextureList.high = generateLOD0DotTexture();
+/*function generateLOD0DotTexture(){
   let c = document.createElement("canvas");
   let ctx_size = 32;
   c.width = c.height = ctx_size;
@@ -181,7 +181,7 @@ function generateLOD0DotTexture(){
     texture.minFilter = THREE.NearestFilter;
   }
   return new THREE.PointsMaterial({size:1,color:0xFFFFFF,map:texture,transparent:true,depthWrite:false});
-}
+}*/
 function generateDotTextures(sysCount,connCount){
   let mat_group_points_LOD0 = [];
   let mat_group_points_LOD1 = [];
@@ -209,8 +209,9 @@ function generateDotTextures(sysCount,connCount){
   }
   return [mat_group_points_LOD0,mat_group_points_LOD1];
 }
+//#endregion
 // ---
-
+/* LEGACY CODE. REMOVE ASAP
   for(let entry in systemList){
 
     //skip loop if property is from prototype
@@ -263,17 +264,77 @@ function generateDotTextures(sysCount,connCount){
       group.children[0] = LOD0;
       group.children[1] = LOD1;
       pointsRef[sectorName] = group;
-      /*
-      Structure:
-      PointsRef
-        > Sector (group)
-          > Point Group (group_system)
-            > LOD0      (LOD0)
-            > LOD1      (LOD1)
-      */
+
+  }
+*/
+//Generate an object made up of all sectors
+let pointSectors = generateSectorList_points();
+console.log(pointSectors);
+//Iterate through all sectors and generate 2 merged geometries (LOD0+LOD1,LOD2) and generate 3 Points objects
+for(let sector in pointSectors){
+  if(!pointSectors.hasOwnProperty(sector)){continue;}
+  let geometryLOD0 = new THREE.Geometry();
+  let geometryLOD2 = new THREE.Geometry();
+  for(let sysIndex = 0;sysIndex < pointSectors[sector].length;sysIndex++){
+    let c = pointSectors[sector][sysIndex].coords;
+    //Add points to LOD0/LOD1
+    geometryLOD0.vertices.push(new THREE.Vector3(c.x,c.y,c.z));
+    //Have a chance to add to LOD2 aswell
+    if( Math.random() < _USER_SECTOR_POINTS_RENDER_LOD2_PERCENTAGE/100 ){
+      geometryLOD2.vertices.push(new THREE.Vector3(c.x,c.y,c.z));
+    }
+  }
+  //TODO: change back later on
+  let pointsLOD0 = new THREE.Points(geometryLOD0,systemDotTextureList[0]);
+  let pointsLOD1 = new THREE.Points(geometryLOD0,systemDotTextureList[1]);
+  let pointsLOD2 = new THREE.Points(geometryLOD2,systemDotTextureList[1]);
+  pointsLOD0.visible = true;
+  pointsLOD1.visible = pointsLOD2.visible = false;
+  let root = new THREE.Group();
+  //get Sector coordinates
+  let sectorCoords = sector.split(":");
+  for(let i = 0;i<3;i++){
+    sectorCoords[i] = Number(sectorCoords[i]);
   }
 
+  let posX = ((sectorCoords[0] * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.x)-0.5*_USER_SECTOR_SIZE;
+  let posY = ((sectorCoords[1] * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.y)-0.5*_USER_SECTOR_SIZE;
+  let posZ = ((sectorCoords[2] * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.z)-0.5*_USER_SECTOR_SIZE;
+  root.position.set(posX,posY,posZ);
+  root.add(pointsLOD0);
+  root.add(pointsLOD1);
+  root.add(pointsLOD2);
+  pointsRef[sector] = root;
 
+}
+
+
+function generateSectorList_points(){
+  let sectors = {};
+  for(let system in systemList){
+    if(!systemList.hasOwnProperty(system)){continue;}
+    let coords = {
+      x: -systemList[system].x,
+      y: systemList[system].y,
+      z: systemList[system].z
+    };
+    //Check if Sector exists; If not: create new sector
+    let sectorCoords = getSectorCoordinates(coords.x,coords.y,coords.z);
+    //Make the "anker" the sector itself, not ( 0 | 0 | 0 )
+    let coords_sector = {
+      x: coords.x - ((sectorCoords.x * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.x)+0.5*_USER_SECTOR_SIZE,
+      y: coords.y - ((sectorCoords.y * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.y)+0.5*_USER_SECTOR_SIZE,
+      z: coords.z - ((sectorCoords.z * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.z)+0.5*_USER_SECTOR_SIZE
+    };
+    let sectorName = sectorCoords.x+":"+sectorCoords.y+":"+sectorCoords.z;
+    if(typeof sectors[sectorName] === "undefined"){
+      //set up a new sector, as the one where the system is in does not exist yet.
+      sectors[sectorName] = [];
+    }
+    sectors[sectorName].push({coords:coords_sector,count:systemList[system].count});
+  }
+  return sectors;
+}
 //#endregion
 //#region Sector Functions
 for(let entry in linesRef){
