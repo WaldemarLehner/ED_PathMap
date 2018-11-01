@@ -436,6 +436,7 @@ let galplane_material = new THREE.MeshBasicMaterial( {map: new THREE.TextureLoad
 let galplane = new THREE.Mesh(new THREE.PlaneGeometry(100000,100000),galplane_material);
 galplane.rotation.set(Math.PI/2,0,0);
 galplane.position.set(0,0,26000);
+galplane.name = "galplane";
 scene_skybox.add(galplane);
 //#endregion
 //#region Controls
@@ -464,6 +465,22 @@ function animate(){
 }
 function update(){
   skybox.position.set(camera.position.x,camera.position.y,camera.position.z);
+  let galplane = scene_skybox.getObjectByName("galplane");
+  if(typeof galplane !== "undefined"){
+    let galplane_distance = camera.position.y-galplane.position.y;
+    if(galplane_distance < 0){
+      galplane_distance *= -1;
+    }
+    if(galplane_distance > 2000){
+      galplane_distance = 2000;
+    }
+    // f\left(x\right)=.5-.5\cos\left(\frac{2\pi}{a\cdot2}x\right)
+    let galplane_opacity = 0.5-0.5*Math.cos((2*Math.PI/4000)*galplane_distance);
+    if(galplane.material.opacity !== galplane_opacity){
+      galplane.material.opacity = galplane_opacity;
+    }
+  }
+
 }
 //Add an Interface to global scope
 window.canvasInterface = new PATHMAP.Interface(camera,[scene_skybox,scene_main,scene_ui],controls,linesRef,pointsRef,logList,systemList);
