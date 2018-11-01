@@ -30,7 +30,7 @@ function drawData(logList, systemList, connectionList, maxSystemVisitCount, maxC
     // Should the points and lines have a identical color scale? Will use the highest value from maxSystemVisitCount / maxConnectionVisitCount
   const _USER_USE_IDENTICAL_SCALE = false;
     //Should the maxSystemVisitCount/maxConnectionVisitCount be overwritten?
-  const _USER_OVERRIDE_MAX_COUNT = true;
+  const _USER_OVERRIDE_MAX_COUNT = false;
   const _USER_OVERRIDE_DEFINITIONS = {system:50,connection:10};
   // Should point/line size be affected by times visited?
   const _USER_VISIT_AFFECT_POINT_SIZE = true;
@@ -113,6 +113,7 @@ let lines = new THREE.Group();
 let points = new THREE.Group();
 let _scale = chroma.scale([_COLOR_DEFINITIONS.min,_COLOR_DEFINITIONS.max]).mode("lrgb");
 //#region Draw Connection Lines
+ //TODO: Think about using BufferGeometry's.
   for(let entry in connectionList){
     try{
       //skip loop if property is from prototype
@@ -160,92 +161,159 @@ let _scale = chroma.scale([_COLOR_DEFINITIONS.min,_COLOR_DEFINITIONS.max]).mode(
     }
   }
 
+//First seperate in individual sectors
+console.log(connectionList);
 //#endregion
 //#region Draw System Dots
-//Generate the Base Materials
-let systemDotTextureList = {};
-systemDotTextureList.high = generateLOD0DotTexture();
-function generateLOD0DotTexture(){
-  let c = document.createElement("canvas");
-  let ctx_size = 32;
-  c.width = c.height = ctx_size;
-  let ctx = c.getContext("2d");
-  let texture = new THREE.Texture(c);
-  ctx.beginPath();
-  ctx.arc(ctx_size/2,ctx_size/2,ctx_size/2,0,2*Math.PI,false);
-  ctx.fillStyle = "#FFFFFF";
-  ctx.fill();
-  texture.needsUpdate = true;
-  if(texture.minFilter !== THREE.NearestFilter && texture.minFilter !== THREE.LinearFilter){
-    texture.minFilter = THREE.NearestFilter;
+//#region pregenerate required materials
+let systemPointTexture = generateSystemPointTexture();
+function generateSystemPointTexture(){
+  let ret = [];
+  for(let i = 0;i < 3;i++){
+
+    let canvas = document.createElement("canvas");
+    if(i===0)canvas.width = canvas.height = 64;
+    else if(i===1)canvas.width = canvas.height = 16;
+    let ctx = canvas.getContext("2d");
+    let tex = new THREE.Texture(canvas);
+
+    ctx.beginPath();
+    ctx.arc(canvas.width/2,canvas.height/2,canvas.height/2-2,0,2*Math.PI);
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fill();
+    tex.needsUpdate = true;
+    if(tex.minFilter !== THREE.NearestFilter && tex.minFilter !== THREE.LinearFilter){
+      tex.minFilter = THREE.NearestFilter;
+    }
+    ret[i] = tex;
   }
-  return new THREE.PointsMaterial({size:1,color:0xFFFFFF,map:texture,transparent:true,depthWrite:false});
+  return ret;
+
 }
-// ---
+//#endregion
+//Generate an object made up of all sectors
+let pointSectors = generateSectorList_points();
+//Iterate through all sectors and generate 2 merged geometries (LOD0+LOD1,LOD2) and generate 3 Points objects
+for(let sector in pointSectors){
+  if(!pointSectors.hasOwnProperty(sector)){continue;}
+  let geometryLOD0 = new THREE.BufferGeometry();
+  let geometryLOD2 = new THREE.BufferGeometry();
+  //position component
+  let geoLOD0Vertices = [];
+  let geoLOD2Vertices = [];
+  //color component
+  let geoLOD0Colors = [];
+  let geoLOD2Colors = [];
+  //size component
+  let geoLOD0Size = [];
+  for(let sysIndex = 0;sysIndex < pointSectors[sector].length;sysIndex++){
+    let c = pointSectors[sector][sysIndex];
+    let sysCount = maxSystemVisitCount;
+    let fraction = (((c.count-1 / sysCount-1)*0.1) > 1) ? 1 : ((c.count-1/sysCount-1)*0.1);
+    let color = new THREE.Color(_scale(fraction).num());
+    let size =  (_USER_VISIT_AFFECT_POINT_SIZE) ? ( _SIZE_DEFINITIONS.point.min + fraction * _SIZE_DEFINITIONS.point.max) : (_SIZE_DEFINITIONS.point.default);
+    //-----
+    geoLOD0Vertices.push(c.coords.x-_USER_SECTOR_SIZE,c.coords.y-_USER_SECTOR_SIZE,c.coords.z-_USER_SECTOR_SIZE);
+    geoLOD0Colors.push(color.r,color.g,color.b);
+    geoLOD0Size.push(size);
+    //Have a chance to add to LOD2 aswell
+    if( Math.random() < _USER_SECTOR_POINTS_RENDER_LOD2_PERCENTAGE/100 ){
+      geoLOD2Vertices.push(c.coords.x-_USER_SECTOR_SIZE,c.coords.y-_USER_SECTOR_SIZE,c.coords.z-_USER_SECTOR_SIZE);
+      geoLOD2Colors.push(color.r,color.g,color.b);
+    }
+  }
+  //LOD 0
+  geometryLOD0.addAttribute("position",new THREE.Float32BufferAttribute(geoLOD0Vertices,3));
+  geometryLOD0.addAttribute("customColor",new THREE.Float32BufferAttribute(geoLOD0Colors,3));
+  geometryLOD0.addAttribute("size",new THREE.Float32BufferAttribute(geoLOD0Size,1));
+  geometryLOD0.computeBoundingSphere();
+  //LOD 2
+  geometryLOD2.addAttribute("position",new THREE.Float32BufferAttribute(geoLOD2Vertices,3));
+  geometryLOD2.addAttribute("color",new THREE.Float32BufferAttribute(geoLOD2Colors,3));
+  geometryLOD2.computeBoundingSphere();
+  //Wait for all shaders to load - if it takes longer than 5 s → throw error
+  let t0 = Date.now();
+  while(typeof __SHADERS.LOD0.vertex === "undefined" || typeof __SHADERS.LOD0.fragment === "undefined"){
+    if(Date.now()-t0 > 5000){
+      throw "Could not retrieve Shader files.";
+    }
+  }
+  let LOD0Shader = new THREE.ShaderMaterial({
+    vertexShader: __SHADERS.LOD0.vertex,
+    fragmentShader: __SHADERS.LOD0.fragment,
+    uniforms:{
+      amplitude: {value:1.0},
+      color: {value: new THREE.Color(0xFFFFFF)},
+      texture: {value: systemPointTexture[0]}
+    },
+    depthTest:false,
+    transparent:true
+  });
+  let LOD1Shader = new THREE.ShaderMaterial({
+    vertexShader: __SHADERS.LOD0.vertex,
+    fragmentShader: __SHADERS.LOD0.fragment,
+    uniforms:{
+      amplitude: {value:1.0},
+      color: {value: new THREE.Color(0xFFFFFF)},
+      texture: {value: systemPointTexture[1]}
+    },
+    depthTest:false,
+    transparent:true
+  });
+  let LOD2Shader = new THREE.PointsMaterial({
+    vertexColors: THREE.VertexColors,
+    size:2
+  });
 
-  for(let entry in systemList){
-
-    //skip loop if property is from prototype
-      if(!systemList.hasOwnProperty(entry)){ console.warn(entry);continue; }
-      //System Coords
-      let x = -systemList[entry].x;
-      let y = systemList[entry].y;
-      let z = systemList[entry].z;
-      //Check if Sector exists; If not: create new sector
-      let sectorCoords = getSectorCoordinates(x,y,z);
-      let sectorName = sectorCoords.x+":"+sectorCoords.y+":"+sectorCoords.z;
-      let group,LOD0,LOD1;
-      if(typeof pointsRef[sectorName] === "undefined"){
-        group = new THREE.Group();
-        group.name = sectorName;
-        LOD0 = new THREE.Group();
-        LOD0.name = "LOD0 @ "+sectorName;
-        LOD1 = new THREE.Group();
-        LOD1.name = "LOD1 @ "+sectorName;
-      }else{
-        group = pointsRef[sectorName];
-        LOD0 = group.children[0];
-        LOD1 = group.children[1];
-      }
-      let posX = ((sectorCoords.x * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.x)+0.5*_USER_SECTOR_SIZE;
-      let posY = ((sectorCoords.y * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.y)+0.5*_USER_SECTOR_SIZE;
-      let posZ = ((sectorCoords.z * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.z)+0.5*_USER_SECTOR_SIZE;
-      let count = systemList[entry].count;
-      let fraction = (((count-1 / maxSystemVisitCount-1)*0.1) > 1) ? 1 : ((count-1/maxSystemVisitCount-1)*0.1);
-      //generate the Dots. Vertices can be used for LOD0 and LOD1;
-      let color = _scale(fraction).num();
-      //let material = new THREE.PointsMaterial();
-      let material = systemDotTextureList.high.clone();
-      material.color.setHex(color);
-      material.size = (_USER_VISIT_AFFECT_POINT_SIZE) ? ( _SIZE_DEFINITIONS.point.min + fraction * _SIZE_DEFINITIONS.point.max) : (_SIZE_DEFINITIONS.point.default);
-
-      group.position.set(posX,posY,posZ);
-      let geometry = new THREE.BufferGeometry();
-      let vertices = new Float32Array([x-posX,y-posY,z-posZ]);
-      geometry.addAttribute("position",new THREE.BufferAttribute(vertices,3));
-      let objectLOD0 = new THREE.Points(geometry,material);
-      objectLOD0.position.set(posX,posY,posZ);
-      objectLOD0.name = systemList[entry].name;
-      LOD0.add(objectLOD0);
-      let objectLOD1 = new THREE.Points(geometry,new THREE.PointsMaterial({color:color}));
-      objectLOD1.position.set(posX,posY,posZ);
-      LOD1.add(objectLOD1);
-      LOD1.visible = false;
-      group.userData = {lodState:0};
-      group.children[0] = LOD0;
-      group.children[1] = LOD1;
-      pointsRef[sectorName] = group;
-      /*
-      Structure:
-      PointsRef
-        > Sector (group)
-          > Point Group (group_system)
-            > LOD0      (LOD0)
-            > LOD1      (LOD1)
-      */
+  let pointsLOD0 = new THREE.Points(geometryLOD0,LOD0Shader);
+  let pointsLOD1 = new THREE.Points(geometryLOD0,LOD1Shader);
+  let pointsLOD2 = new THREE.Points(geometryLOD2,LOD2Shader);
+  pointsLOD0.visible = true;
+  pointsLOD1.visible = false;
+  pointsLOD2.visible = false;
+  let root = new THREE.Group();
+  //get Sector coordinates
+  let sectorCoords = sector.split(":");
+  for(let i = 0;i<3;i++){
+    sectorCoords[i] = Number(sectorCoords[i]);
   }
 
+  let posX = ((sectorCoords[0] * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.x)+0.5*_USER_SECTOR_SIZE;
+  let posY = ((sectorCoords[1] * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.y)+0.5*_USER_SECTOR_SIZE;
+  let posZ = ((sectorCoords[2] * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.z)+0.5*_USER_SECTOR_SIZE;
+  root.position.set(posX,posY,posZ);
+  root.add(pointsLOD0);
+  root.add(pointsLOD1);
+  root.add(pointsLOD2);
+  pointsRef[sector] = root;
 
+}
+function generateSectorList_points(){
+  let sectors = {};
+  for(let system in systemList){
+    if(!systemList.hasOwnProperty(system)){continue;}
+    let coords = {
+      x: -systemList[system].x,
+      y: systemList[system].y,
+      z: systemList[system].z
+    };
+    //Check if Sector exists; If not: create new sector
+    let sectorCoords = getSectorCoordinates(coords.x,coords.y,coords.z);
+    //Make the "anker" the sector itself, not ( 0 | 0 | 0 )
+    let coords_sector = {
+      x: coords.x - ((sectorCoords.x * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.x)+0.5*_USER_SECTOR_SIZE,
+      y: coords.y - ((sectorCoords.y * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.y)+0.5*_USER_SECTOR_SIZE,
+      z: coords.z - ((sectorCoords.z * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.z)+0.5*_USER_SECTOR_SIZE
+    };
+    let sectorName = sectorCoords.x+":"+sectorCoords.y+":"+sectorCoords.z;
+    if(typeof sectors[sectorName] === "undefined"){
+      //set up a new sector, as the one where the system is in does not exist yet.
+      sectors[sectorName] = [];
+    }
+    sectors[sectorName].push({coords:coords_sector,count:systemList[system].count});
+  }
+  return sectors;
+}
 //#endregion
 //#region Sector Functions
 for(let entry in linesRef){
@@ -260,8 +328,7 @@ for(let entry in pointsRef){
   }
   scene_main.add(pointsRef[entry]);
 }
-//get System Calculation on init
-
+//get LOD calculations when initializing
 for(let entry in pointsRef){
   if(!pointsRef.hasOwnProperty(entry)){
     continue;
@@ -271,38 +338,19 @@ for(let entry in pointsRef){
     pointsRef[entry].userData.lodState = 0;
     pointsRef[entry].children[0].visible = true;
     pointsRef[entry].children[1].visible = false;
-    if(_USER_DEBUG){
-      pointsRef[entry].children[0].children.forEach(function(e){
-        e.material.color.setHex(0x00FF00);
-      });
-    }
+    pointsRef[entry].children[2].visible = false;
   }
   else if(dist < _USER_SECTOR_POINTS_RENDER_LOD2_DISTANCE){
     pointsRef[entry].userData.lodState = 1;
     pointsRef[entry].children[0].visible = false;
     pointsRef[entry].children[1].visible = true;
-    if(_USER_DEBUG){
-      pointsRef[entry].children[1].children.forEach(function(e){
-        e.material.color.setHex(0x00FFFF);
-      });
-    }
+    pointsRef[entry].children[1].visible = false;
   }
   else{
     pointsRef[entry].userData.lodState = 2;
     pointsRef[entry].children[0].visible = false;
-    pointsRef[entry].children[1].visible = true;
-    pointsRef[entry].children[1].children.forEach(function(e){
-      e.visible = true;
-      let x = Math.random();
-      if(x > _USER_SECTOR_POINTS_RENDER_LOD2_PERCENTAGE/100){
-        e.visible = false;
-      }
-    });
-    if(_USER_DEBUG){
-      pointsRef[entry].children[1].children.forEach(function(e){
-        e.material.color.setHex(0xFFFF00);
-      });
-    }
+    pointsRef[entry].children[1].visible = false;
+    pointsRef[entry].children[2].visible = true;
   }
 }
 
@@ -327,54 +375,25 @@ function updateLOD(bool){
           pointsRef[entry].userData.lodState = 0;
             e.children[0].visible = true;
             e.children[1].visible = false;
-          if(_USER_DEBUG){
-            e.children[0].children.forEach(function(entry){
-              entry.material.color.setHex(0x00FF00);
-            });
-          }
+            e.children[2].visible = false;
         }
       }
       else if(dist < _USER_SECTOR_POINTS_RENDER_LOD2_DISTANCE){
         if(pointsRef[entry].userData.lodState !== 1){
           if(pointsRef[entry].userData.lodState === 2){
-            e.children[1].children.forEach(function(entry){
-              if(!entry.visible){
-                entry.visible = true;
-              }
-            });
-          }
-          pointsRef[entry].userData.lodState = 1;
-            e.children[0].visible = false;
+            e.userData.lodState = 1;
+            e.children[0].visible = e.children[2].visible = false;
             e.children[1].visible = true;
-          if(_USER_DEBUG){
-            e.children[1].children.forEach(function(entry){
-              entry.material.color.setHex(0x00FFFF);
-            });
           }
         }
-
       }
       else{
         if(pointsRef[entry].userData.lodState !== 2){
           pointsRef[entry].userData.lodState = 2;
-            e.children[0].visible = false;
-            e.children[1].visible = true;
-          e.children[1].children.forEach(function(element){
-            if(_USER_DEBUG){
-              element.material.color.setHex(0xFFFF00);
-            }
-            if(!element.visible){
-              element.visible = true;
-            }
-            if(Math.random() > _USER_SECTOR_POINTS_RENDER_LOD2_PERCENTAGE/100){
-              element.visible = false;
-            }
-          });
+            e.children[0].visible = e.children[1].visible = false;
+            e.children[2].visible = true;
         }
-
       }
-
-
     }
   }
   else{
