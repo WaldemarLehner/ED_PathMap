@@ -6,6 +6,22 @@ Requires jQuery
 
 //eventListeners
 $(document).ready(function(){
+  //load shaders
+  __SHADERS = {LOD0:{}};
+  $.ajax({
+    url:"/src/shader/pointsLOD0_fragment.glsl",
+    context: document.body,
+    dataType: "text"
+  }).done(function(data){
+    __SHADERS.LOD0.fragment = data;
+  });
+  $.ajax({
+    url:"/src/shader/pointsLOD0_vertex.glsl",
+    context: document.body,
+    dataType: "text"
+  }).done(function(data){
+    __SHADERS.LOD0.vertex = data;
+  });
   $("#fileinput_init").on("click",importFile);
 
 });
@@ -15,12 +31,12 @@ function importFile(){
 
   let file_input = document.getElementById("fileinput").files[0];
   if(file_input === undefined || file_input === null){
-    UI.createError("No file has been selected.",1000);
-    return undefined; //cancel operation
+    throw "no file has been selected";
+
   }
   if(file_input.type != "application/json"){
-    UI.createError("Selected file is not in JSON format.",1000);
-    return undefined;
+    throw "file not type of 'application/json'";
+
   }
 
   let filereader = new FileReader();

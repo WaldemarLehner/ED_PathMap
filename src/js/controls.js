@@ -43,8 +43,9 @@ THREE.EDControls = function(camera,scene) {
 			throw "distance needs to type of Number";
 		}
 		if(!(angle instanceof THREE.Euler)){
-			//calculate desired angle by getting current position
-		}
+			//use camera orientation
+				angle = _camera.rotation;
+			}
 		//current values
 		let posActual = new THREE.Vector3();
 		let rotActual =  _currentCameraRotation;
@@ -83,9 +84,6 @@ THREE.EDControls = function(camera,scene) {
 		//}else if(rotDesired.x > 0){
 
 		//}
-
-		console.log("desired",desiredLookAtAxis);
-
 		if(typeof timeToAnimate === "number"){
 			if(timeToAnimate > 0){
 				timeToAnimate = Math.round(timeToAnimate);
