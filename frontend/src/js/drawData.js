@@ -113,6 +113,7 @@ let lines = new THREE.Group();
 let points = new THREE.Group();
 let _scale = chroma.scale([_COLOR_DEFINITIONS.min,_COLOR_DEFINITIONS.max]).mode("lrgb");
 //#region Draw Connection Lines
+ //TODO: Think about using BufferGeometry's.
   for(let entry in connectionList){
     try{
       //skip loop if property is from prototype
@@ -160,6 +161,8 @@ let _scale = chroma.scale([_COLOR_DEFINITIONS.min,_COLOR_DEFINITIONS.max]).mode(
     }
   }
 
+//First seperate in individual sectors
+console.log(connectionList);
 //#endregion
 //#region Draw System Dots
 //#region pregenerate required materials
@@ -170,8 +173,7 @@ function generateSystemPointTexture(){
 
     let canvas = document.createElement("canvas");
     if(i===0)canvas.width = canvas.height = 64;
-    else if(i===1)canvas.width = canvas.height = 32;
-    else if(i===2)canvas.width = canvas.height = 8;
+    else if(i===1)canvas.width = canvas.height = 16;
     let ctx = canvas.getContext("2d");
     let tex = new THREE.Texture(canvas);
 
@@ -191,7 +193,6 @@ function generateSystemPointTexture(){
 //#endregion
 //Generate an object made up of all sectors
 let pointSectors = generateSectorList_points();
-console.log(pointSectors);
 //Iterate through all sectors and generate 2 merged geometries (LOD0+LOD1,LOD2) and generate 3 Points objects
 for(let sector in pointSectors){
   if(!pointSectors.hasOwnProperty(sector)){continue;}
@@ -259,16 +260,9 @@ for(let sector in pointSectors){
     depthTest:false,
     transparent:true
   });
-  let LOD2Shader = new THREE.ShaderMaterial({
-    vertexShader: __SHADERS.LOD0.vertex,
-    fragmentShader: __SHADERS.LOD0.fragment,
-    uniforms:{
-      amplitude: {value:1.0},
-      color: {value: new THREE.Color(0xFFFFFF)},
-      texture: {value: systemPointTexture[2]}
-    },
-    depthTest:false,
-    transparent:true
+  let LOD2Shader = new THREE.PointsMaterial({
+    vertexColors: THREE.VertexColors,
+    size:2
   });
 
   let pointsLOD0 = new THREE.Points(geometryLOD0,LOD0Shader);
@@ -294,8 +288,6 @@ for(let sector in pointSectors){
   pointsRef[sector] = root;
 
 }
-
-
 function generateSectorList_points(){
   let sectors = {};
   for(let system in systemList){
