@@ -1,0 +1,78 @@
+
+//color vars in _colorVars.scss
+// canvas navbar
+
+div.content {
+	//non fullscreen logic
+	//fullscreen logic
+	&.fullscreen {
+
+		nav {
+			position:relative;
+			background-color: $nav_backgrd;
+			overflow: hidden;
+			z-index:999;
+			p.nav_left {
+				font-size: 17px;
+				float: left;
+				font-family: 'Rubik', sans-serif;
+				padding: 14px 16px;
+				span {
+					&#nav_sysname {
+						color: $color_systemname;
+						font-weight: 500;
+						text-transform: uppercase;
+					}
+
+					&#nav_sysdate {
+						&::before {
+							content: ' | ';
+						}
+						color: $color_systemdate;
+						font-weight: 400;
+						pointer-events: none;
+						user-select: none;
+					}
+				}
+			}
+
+			div.nav_right {
+				color: $nav_iconcolor;
+				a {
+					float: right;
+					background-color: $nav_backgrd;
+					font-size: 25px;
+					padding: 9px 12px;
+					cursor: pointer;
+					&:hover {
+						background-color: #2f2f34;
+					}
+					&:link{
+						color: $nav_iconcolor;
+					}
+					&:visited{
+						color: $nav_iconcolor;
+					}
+				}
+				p {
+					float:right;
+					font-size: 17px;
+					font-family: 'Rubik', sans-serif;
+					padding: 14px 16px;
+					user-select: none;
+					cursor: pointer;
+					&:hover {
+						background-color: #2f2f34;
+					}
+
+				}
+			}
+
+			div.nav_right a,
+			p.nav_left {
+				text-align: center;
+				text-decoration: none;
+			}
+		}
+	}
+}

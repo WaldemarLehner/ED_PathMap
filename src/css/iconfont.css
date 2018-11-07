@@ -1,0 +1,68 @@
+@font-face {
+  font-family: 'pathmap_icons';
+  src:  url('../fonts/pathmap_icons.eot?ae1t7t');
+  src:  url('../fonts/pathmap_icons.eot?ae1t7t#iefix') format('embedded-opentype'),
+    url('../fonts/pathmap_icons.ttf?ae1t7t') format('truetype'),
+    url('../fonts/pathmap_icons.woff?ae1t7t') format('woff'),
+    url('../fonts/pathmap_icons.svg?ae1t7t#pathmap_icons') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+
+[class^="icon-"], [class*=" icon-"] {
+  /* use !important to prevent issues with browser extensions that change fonts */
+  font-family: 'pathmap_icons' !important;
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-first:before {
+  content: "\e900";
+}
+.icon-back3:before {
+  content: "\e901";
+}
+.icon-back2:before {
+  content: "\e902";
+}
+.icon-back1:before {
+  content: "\e903";
+}
+.icon-front1:before {
+  content: "\e904";
+}
+.icon-front2:before {
+  content: "\e905";
+}
+.icon-front3:before {
+  content: "\e906";
+}
+.icon-last:before {
+  content: "\e907";
+}
+.icon-cross:before {
+  content: "\e908";
+}
+.icon-edsm:before {
+  content: "\e909";
+}
+.icon-fullscreen:before {
+  content: "\e90a";
+}
+.icon-line:before {
+  content: "\e90b";
+}
+.icon-point:before {
+  content: "\e90c";
+}
+.icon-settings:before {
+  content: "\e90d";
+}
