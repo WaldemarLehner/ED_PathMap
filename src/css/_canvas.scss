@@ -1,0 +1,9 @@
+div.content.fullscreen{
+	div.canvas_container{
+		position:absolute;
+		top:0;
+		left:0;
+		overflow-y: hidden;
+		height:100%;
+	}
+}

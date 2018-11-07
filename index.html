@@ -28,7 +28,7 @@
   </div>
 
   <div class="content fullscreen">
-    <div id="settings_legacy" class="hidden">
+    <div id="settings_legacy" class="">
 
         <label id="fileinput_label" for="log">EDSM log</label>
         <input type="file" id="fileinput" name="log"  accept=".json,application/json" />
@@ -62,19 +62,19 @@ Skaude AA-A h294</span><span id="nav_sysdate">2012-12-12 12:12:12</span></p>
           <ul>
             <li>
               <label>Show connection lines
-                <input id="check_conn_lines" type="checkbox" />
+                <input id="check_conn_lines" type="checkbox" checked />
                 <span class="checkbox"></span>
               </label>
             </li>
             <li>
               <label>Show system points
-                <input id="check_sys_points" type="checkbox" />
+                <input id="check_sys_points" type="checkbox" checked/>
                 <span class="checkbox"></span>
               </label>
             </li>
             <li>
               <label>Show CMDR position
-                <input id="check_show_cmdr_pos" type="checkbox" />
+                <input id="check_show_cmdr_pos" type="checkbox" checked/>
                 <span class="checkbox"></span>
               </label>
             </li>
@@ -94,7 +94,7 @@ Skaude AA-A h294</span><span id="nav_sysdate">2012-12-12 12:12:12</span></p>
 
       </div>
     </div>
-    <div id="3d_container" class="hidden" oncontextmenu="return false;">
+    <div id="3d_container" class="canvas_container" oncontextmenu="return false;">
 
 
     </div>
