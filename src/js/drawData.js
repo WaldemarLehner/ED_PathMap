@@ -414,6 +414,8 @@ function updateLOD(bool){
 }
 //#endregion
 //#region Skybox
+UI.Loader.updateText1();
+UI.Loader.updateText2("Load skybox images.");
 let skybox_material_data = [
   new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("src/img/skybox/north.png"),side:THREE.BackSide}),
   new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("src/img/skybox/south.png"),side:THREE.BackSide}),
@@ -486,6 +488,10 @@ function update(){
 window.canvasInterface = new PATHMAP.Interface(camera,[scene_skybox,scene_main,scene_ui],controls,linesRef,pointsRef,logList,systemList);
 
 //Start with animation loop
+UI.Loader.updateText2("Done");
+setTimeout(function(){
+  UI.Loader.hide();
+},1000);
 animate();
 window.addEventListener("resize",function(){
   camera.aspect = window.innerWidth/window.innerHeight;

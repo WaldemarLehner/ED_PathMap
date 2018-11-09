@@ -9,6 +9,8 @@ $.ajax({
   url:"/src/data/logs.json",
   success: function(data){
     $(document).ready(function(){
+      UI.Loader.updateText1();
+      UI.Loader.updateText2("Processing travel history");
       filterData(data);
     });
   },
@@ -101,5 +103,7 @@ function filterData(json_data){
   }
 
 //Send prepared data over to drawData.js for map generation.
+  UI.Loader.updateText1();
+  UI.Loader.updateText2("Draw travel history");
   drawData(syslog,syslist,sysconnections,sysMaxCount,conMaxCount);
 }

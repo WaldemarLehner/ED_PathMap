@@ -219,20 +219,23 @@ THREE.EDControls = function(camera,scene) {
 
 	//#endregion
 	//#region Listeners
-	window.addEventListener("wheel",function(e){
+	let canvas = document.getElementById("3d_container");
+	console.log(canvas);
+
+	canvas.addEventListener("wheel",function(e){
 		onmouseWheel(e.deltaY);
 	});
-	window.addEventListener("keydown", function(e) {
+	canvas.addEventListener("keydown", function(e) {
 		onkeyDown(e.keyCode);
 	});
-	window.addEventListener("keyup", function(e) {
+	canvas.addEventListener("keyup", function(e) {
 		onkeyUp(e.keyCode);
 	});
-	window.addEventListener("mousedown",function(e){
+	canvas.addEventListener("mousedown",function(e){
 		e.preventDefault();
 		onmouseDown(e.which);
 	});
-	window.addEventListener("mouseup",function(e){
+	canvas.addEventListener("mouseup",function(e){
 		e.preventDefault();
 		onmouseUp(e.which);
 	});
