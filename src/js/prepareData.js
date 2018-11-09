@@ -4,52 +4,21 @@ In addition to that it sets up a map of Systems which hold the coordinates of sa
 Requires jQuery
 */
 
-//eventListeners
-$(document).ready(function(){
-  //load shaders
-  __SHADERS = {LOD0:{}};
-  $.ajax({
-    url:"/src/shader/pointsLOD0_fragment.glsl",
-    context: document.body,
-    dataType: "text"
-  }).done(function(data){
-    __SHADERS.LOD0.fragment = data;
-  });
-  $.ajax({
-    url:"/src/shader/pointsLOD0_vertex.glsl",
-    context: document.body,
-    dataType: "text"
-  }).done(function(data){
-    __SHADERS.LOD0.vertex = data;
-  });
-  $("#fileinput_init").on("click",importFile);
-
+//Get Travel Log
+$.ajax({
+  url:"/src/data/logs.json",
+  success: function(data){
+    $(document).ready(function(){
+      filterData(data);
+    });
+  },
+  error: function(){
+    throw "[AJAX] Failed to get Travel History. Please submit an issue on github.";
+  }
 });
 
 
-function importFile(){
 
-  let file_input = document.getElementById("fileinput").files[0];
-  if(file_input === undefined || file_input === null){
-    throw "no file has been selected";
-
-  }
-  if(file_input.type != "application/json"){
-    throw "file not type of 'application/json'";
-
-  }
-
-  let filereader = new FileReader();
-  $("#fileinput_label").remove();
-  $("#fileinput").remove();
-  $("#fileinput_init").remove();
-  $("#settings").hide();
-  filereader.onload = function(event_logs){
-      filterData(JSON.parse(event_logs.srcElement.result));
-
-  };
-  filereader.readAsText(file_input);
-}
 
 function filterData(json_data){
 

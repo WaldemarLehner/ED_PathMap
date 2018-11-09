@@ -233,14 +233,14 @@ for(let sector in pointSectors){
   geometryLOD2.computeBoundingSphere();
   //Wait for all shaders to load - if it takes longer than 5 s → throw error
   let t0 = Date.now();
-  while(typeof __SHADERS.LOD0.vertex === "undefined" || typeof __SHADERS.LOD0.fragment === "undefined"){
-    if(Date.now()-t0 > 5000){
-      throw "Could not retrieve Shader files.";
-    }
-  }
+  let __SHADERS = {
+    vertex:"uniform float amplitude;attribute float size;attribute vec3 customColor;varying vec3 vColor;void main() {vColor = customColor;vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );gl_PointSize = size * ( 300.0 / -mvPosition.z );gl_Position = projectionMatrix * mvPosition;}",
+    fragment:"uniform vec3 color;uniform sampler2D texture;varying vec3 vColor;void main() {gl_FragColor = vec4( color * vColor, 1.0 );gl_FragColor = gl_FragColor * texture2D( texture, gl_PointCoord );}"
+  };
+
   let LOD0Shader = new THREE.ShaderMaterial({
-    vertexShader: __SHADERS.LOD0.vertex,
-    fragmentShader: __SHADERS.LOD0.fragment,
+    vertexShader: __SHADERS.vertex,
+    fragmentShader: __SHADERS.fragment,
     uniforms:{
       amplitude: {value:1.0},
       color: {value: new THREE.Color(0xFFFFFF)},
@@ -250,8 +250,8 @@ for(let sector in pointSectors){
     transparent:true
   });
   let LOD1Shader = new THREE.ShaderMaterial({
-    vertexShader: __SHADERS.LOD0.vertex,
-    fragmentShader: __SHADERS.LOD0.fragment,
+    vertexShader: __SHADERS.vertex,
+    fragmentShader: __SHADERS.fragment,
     uniforms:{
       amplitude: {value:1.0},
       color: {value: new THREE.Color(0xFFFFFF)},
