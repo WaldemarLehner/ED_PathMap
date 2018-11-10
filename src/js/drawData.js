@@ -492,6 +492,8 @@ UI.Loader.updateText2("Done");
 setTimeout(function(){
   UI.Loader.hide();
 },1000);
+canvasInterface.focus.last(true);
+UI.update();
 animate();
 window.addEventListener("resize",function(){
   camera.aspect = window.innerWidth/window.innerHeight;

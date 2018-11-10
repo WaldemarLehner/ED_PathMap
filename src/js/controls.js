@@ -225,10 +225,10 @@ THREE.EDControls = function(camera,scene) {
 	canvas.addEventListener("wheel",function(e){
 		onmouseWheel(e.deltaY);
 	});
-	canvas.addEventListener("keydown", function(e) {
+	window.addEventListener("keydown", function(e) {
 		onkeyDown(e.keyCode);
 	});
-	canvas.addEventListener("keyup", function(e) {
+	window.addEventListener("keyup", function(e) {
 		onkeyUp(e.keyCode);
 	});
 	canvas.addEventListener("mousedown",function(e){

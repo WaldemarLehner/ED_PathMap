@@ -3,6 +3,62 @@ This script handles UI (such as loader animations) and the data-import;
 Requires jQuery to function properly;
 */
 
+$(document).ready(function(){
+/* * *  UI Event Listeners  * * */
+  $(".action-settings").click(function(){
+    if($(this).hasClass("active")){
+      //remove class, hide settings window
+      $(this).removeClass("active");
+      $(".settings_container").removeClass("active");
+    }else{
+      $(this).addClass("active");
+      $(".settings_container").addClass("active");
+    }
+  });
+
+  //
+  $(".action-select-settings-close").click(function(){
+    if($(".action-settings").hasClass("active")){
+      $(".action-settings").removeClass("active");
+      $(".settings_container").removeClass("active");
+    }
+  });
+
+
+  $(".action-select-last").click(function(){
+    canvasInterface.focus.last(true);
+    UI.update();
+  });
+  $(".action-select-front3").click(function(){
+    canvasInterface.focus.nth(canvasInterface.getFocusIndex()+1000,true);
+    UI.update();
+  });
+  $(".action-select-front2").click(function(){
+    canvasInterface.focus.nth(canvasInterface.getFocusIndex()+100,true);
+    UI.update();
+  });
+  $(".action-select-front1").click(function(){
+    canvasInterface.focus.next(true);
+    UI.update();
+  });
+  $(".action-select-back1").click(function(){
+    canvasInterface.focus.previous(true);
+    UI.update();
+  });
+  $(".action-select-back2").click(function(){
+    canvasInterface.focus.nth(canvasInterface.getFocusIndex()-100,true);
+    UI.update();
+  });
+  $(".action-select-back3").click(function(){
+    canvasInterface.focus.nth(canvasInterface.getFocusIndex()-1000,true);
+    UI.update();
+  });
+  $(".action-select-first").click(function(){
+    canvasInterface.focus.first(true);
+    UI.update();
+  });
+});
+
 
 UI = {objects:{}};
 UI.objects.Loader = function(){
@@ -68,3 +124,10 @@ UI.Loader = new UI.objects.Loader();
 $(document).ready(function(){
   UI.Loader.updateText1();
 });
+UI.update = function(){
+  let count = canvasInterface.getFocusIndex();
+  let data = canvasInterface.getSystemInFocus();
+  $("#nav_sysname").text(data.name);
+  $("#nav_sysdate").text(data.date);
+  $("#nav_systemid").text(count.toString()+" / "+(canvasInterface.getLogList().length-1).toString());
+};

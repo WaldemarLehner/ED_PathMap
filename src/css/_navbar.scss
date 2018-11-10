@@ -44,6 +44,10 @@ div.content {
 					font-size: 25px;
 					padding: 9px 12px;
 					cursor: pointer;
+					&.active{
+						background-color: $nav_backgrd_active2;
+						color: orange;
+					}
 					&:hover {
 						background-color: #2f2f34;
 					}

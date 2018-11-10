@@ -47,6 +47,9 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 	this.getControls = function() {
 		return _controls;
 	};
+	this.getFocusIndex = function() {
+		return _currentIndex;
+	};
 	this.getSystemInFocus = function() {
 		return getSystemByIndex(_currentIndex);
 	};
@@ -175,6 +178,12 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 		}
 		return _this;
 	};
+	this.getSysList = function() {
+		return _sysList;
+	};
+	this.getLogList = function(){
+		return _logList;
+	};
 	//#endregion
 	//#region private Functions
 	function getMarkerMaterial(materialName) {
@@ -277,7 +286,6 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 	}
 
 	function focusAtSystem(system, showSystemInfo) {
-		console.log(system);
 		let directionCamera_System = new THREE.Vector3(_camera.position.x - system.coords.x, _camera.position.y - system.coords.y, _camera.position.z - system.coords.z);
 		directionCamera_System.clampLength(100, 10000);
 
