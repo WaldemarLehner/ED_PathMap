@@ -118,8 +118,7 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 			focusAtSystem(getSystemByIndex(_currentIndex), showSystemData);
 		},
 		next: function(showSystemData) {
-			_currentIndex = (_currentIndex < _logList.length - 1) ? (_currentIndex = _currentIndex++) : (_logList.length - 1);
-			_currentIndex++;
+			_currentIndex = (_currentIndex < _logList.length - 1) ? (_currentIndex += 1) : (_logList.length - 1);
 			focusAtSystem(getSystemByIndex(_currentIndex), showSystemData);
 		},
 		previous: function(showSystemData) {
@@ -150,7 +149,6 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 			focusAtSystem(getSystemByIndex(_currentIndex), showSystemData);
 
 		}
-		//TODO ... should player be added here?
 	};
 	//#endregion
 	this.showSystemDots = function(bool) {
@@ -164,6 +162,19 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 			pointsref[sector].visible = bool;
 		}
 		return _this;
+	};
+	this.showSysInfo = function(bool) {
+		if(typeof bool !== "boolean"){
+			console.warn("Given paremter is not typeof boolean. Ignoring request.");
+		}else{
+			_showSysInfo = bool;
+			if(bool){
+				_this.killSystemUI();
+				generateSystemInfo(_this.getSystemInFocus(_this.getFocusIndex()));
+			}else{
+				_this.killSystemUI();
+			}
+		}
 	};
 	this.showSystemLines = function(bool) {
 		if (typeof bool !== "boolean") {
@@ -212,6 +223,9 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 	}
 
 	function generateSystemInfo(sysInfo, returnObj) {
+		if(!_showSysInfo){
+			return;
+		}
 		let canvas = document.createElement("canvas");
 		canvas.width = 512;
 		canvas.height = 128;
@@ -285,12 +299,12 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 		}
 	}
 
-	function focusAtSystem(system, showSystemInfo) {
+	function focusAtSystem(system, _showSystemInfo) {
 		let directionCamera_System = new THREE.Vector3(_camera.position.x - system.coords.x, _camera.position.y - system.coords.y, _camera.position.z - system.coords.z);
 		directionCamera_System.clampLength(100, 10000);
 
 		_this.focusCamera(new THREE.Vector3(system.coords.x, system.coords.y, system.coords.z), directionCamera_System.length(), undefined, 1000);
-		if (showSystemInfo) {
+		if (_showSystemInfo) {
 			_this.killSystemUI();
 			return generateSystemInfo(system);
 		}
@@ -305,6 +319,7 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 	var _pointsRef = {};
 	var _linesRef = {};
 	var _this = this;
+	var _showSysInfo = true;
 	var _currentIndex = 0;
 	var _logList = logList;
 	var _sysList = sysList;

@@ -220,8 +220,6 @@ THREE.EDControls = function(camera,scene) {
 	//#endregion
 	//#region Listeners
 	let canvas = document.getElementById("3d_container");
-	console.log(canvas);
-
 	canvas.addEventListener("wheel",function(e){
 		onmouseWheel(e.deltaY);
 	});

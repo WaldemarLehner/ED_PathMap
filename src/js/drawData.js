@@ -162,7 +162,6 @@ let _scale = chroma.scale([_COLOR_DEFINITIONS.min,_COLOR_DEFINITIONS.max]).mode(
   }
 
 //First seperate in individual sectors
-console.log(connectionList);
 //#endregion
 //#region Draw System Dots
 //#region pregenerate required materials

@@ -24,7 +24,7 @@ $(document).ready(function(){
     }
   });
 
-
+//#region Navigation Focus Buttons
   $(".action-select-last").click(function(){
     canvasInterface.focus.last(true);
     UI.update();
@@ -57,6 +57,27 @@ $(document).ready(function(){
     canvasInterface.focus.first(true);
     UI.update();
   });
+//#endregion
+//#region Settings
+  $("#check_conn_lines").click(function(){
+      canvasInterface.showSystemLines($("#check_conn_lines > input").is(":checked"));
+  });
+  $("#check_sys_points").click(function(){
+      canvasInterface.showSystemDots($("#check_sys_points > input").is(":checked"));
+  });
+  $("#check_show_sys_info").click(function(){
+      canvasInterface.showSysInfo($("#check_show_sys_info > input").is(":checked"));
+  });
+  $("#check_show_cmdr_pos").click(function(){
+
+  });
+  $("#check_show_friend_pos").click(function(){
+
+  });
+  $("#check_limit_selection").click(function(){
+
+  });
+//#endregion
 });
 
 
