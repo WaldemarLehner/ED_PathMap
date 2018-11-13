@@ -69,10 +69,10 @@ $(document).ready(function(){
       canvasInterface.showSysInfo($("#check_show_sys_info > input").is(":checked"));
   });
   $("#check_show_cmdr_pos").click(function(){
-
+      canvasInterface.showCmdrPosition($("#check_show_cmdr_pos > input").is(":checked"));
   });
   $("#check_show_friend_pos").click(function(){
-
+      canvasInterface.showFriendsPosition($("#check_show_friend_pos > input").is(":checked"));
   });
   $("#check_limit_selection").click(function(){
 
