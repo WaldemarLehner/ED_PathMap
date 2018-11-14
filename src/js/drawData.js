@@ -66,6 +66,8 @@ _connectionList = connectionList;
   var scene_skybox = new THREE.Scene();
   var scene_main = new THREE.Scene();
   var scene_ui = new THREE.Scene();
+  var scene_ui1 = new THREE.Scene();
+  var scene_ui2 = new THREE.Scene();
   var camera = new THREE.PerspectiveCamera( 80, canvas_width/canvas_height,0.1,600000);
   camera.position.set(0.5,0.2,0.1);
   var renderer = new THREE.WebGLRenderer();
@@ -461,6 +463,10 @@ function animate(){
     renderer.render(scene_main,camera);
     renderer.clearDepth();
     renderer.render(scene_ui,camera);
+    renderer.clearDepth();
+    renderer.render(scene_ui1,camera);
+    renderer.clearDepth();
+    renderer.render(scene_ui2,camera);
     controls.update();
   }
 }
@@ -484,7 +490,7 @@ function update(){
 
 }
 //Add an Interface to global scope
-window.canvasInterface = new PATHMAP.Interface(camera,[scene_skybox,scene_main,scene_ui],controls,linesRef,pointsRef,logList,systemList);
+window.canvasInterface = new PATHMAP.Interface(camera,[scene_skybox,scene_main,scene_ui,scene_ui1,scene_ui2],controls,linesRef,pointsRef,logList,systemList);
 
 //Start with animation loop
 UI.Loader.updateText2("Done");

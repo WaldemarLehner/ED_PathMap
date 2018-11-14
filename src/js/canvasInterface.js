@@ -62,7 +62,7 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 	//#region SET
 	this.killSystemUI = function() {
 		if (typeof _sysUI !== "undefined") {
-			_scenes[2].remove(_scenes[2].getObjectByName("systemInfo"));
+			_scenes[4].remove(_scenes[4].getObjectByName("systemInfo"));
 			_sysUI = undefined;
 		}
 	};
@@ -293,7 +293,7 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 		sysText.scale.set(4 / sizeDivider, 1 / sizeDivider, 1);
 		sysText.name = "systemInfo";
 		_sysUI = sysText;
-		_scenes[2].add(sysText);
+		_scenes[4].add(sysText);
 		return (returnObj) ? _sysUI : _this;
 
 		function roundRect(x0, y0, x1, y1, r, color,makeStroke) {
@@ -409,7 +409,7 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 			function addIconsToScene(){
 				//Delete Old Instances if Exists
 				if(typeof _services.cmdr.reference !== "undefined"){
-					_scenes[2].remove(_services.cmdr.reference);
+					_scenes[3].remove(_services.cmdr.reference);
 				}
 				if(typeof _services.friends.reference !== "undefined"){
 					_scenes[2].remove(_services.friends.reference);
@@ -430,7 +430,7 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 				cmdrRef.userData = {
 					url: _services.cmdr.data.url
 				};
-				_scenes[2].add(cmdrRef);
+				_scenes[3].add(cmdrRef);
 
 				//generate Friends Group
 				let friendsRef = new THREE.Group();
