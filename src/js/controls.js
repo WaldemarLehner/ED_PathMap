@@ -37,53 +37,63 @@ THREE.EDControls = function(camera,scene) {
 		//#region "focusAt" logic
 		//check for data integrity
 		if(!(vector3 instanceof THREE.Vector3)){
-			throw "Vector3 needs the isntace of THREE.Vector3";
+			throw "Vector3 needs to be instance of THREE.Vector3";
 		}
 		if(typeof distance !== "number"){
-			throw "distance needs to type of Number";
+			throw "distance needs to be type of Number";
 		}
 		if(!(angle instanceof THREE.Euler)){
-			//use camera orientation
-				angle = _camera.rotation;
-			}
+			//get the angle from the current camera by setting up a fake camera at the current camera's position and making it lookAt the target;
+			let tempCam = new THREE.PerspectiveCamera(45,1,0.1,10);
+			tempCam.position.set(_camera.position.x,_camera.position.y,_camera.position.z);
+			//tempCam.up = new THREE.Vector3(0,1,0).normalize();
+			tempCam.up = new THREE.Vector3(0,0,0).normalize();
+			tempCam.rotation.order = "ZYX";
+			tempCam.lookAt(vector3);
+			angle = tempCam.rotation.clone();
+			angle.z = 0;
+			tempCam = undefined;
+		}
 		//current values
 		let posActual = new THREE.Vector3();
 		let rotActual =  _currentCameraRotation;
 		//rotActual.y = rotActual.y%2*Math.PI;
 		let zoomActual = _distanceToTarget;
-		posActual.set(
-			_target.x+_cameraLookAtAxis.x*_distanceToTarget*-1,
-			_target.y+_cameraLookAtAxis.y*_distanceToTarget*-1,
-			_target.z+_cameraLookAtAxis.z*_distanceToTarget*-1
-		);
-		//if(rotActual.y > Math.PI){
-		//	rotActual.y = -2*Math.PI+rotActual.y;
-		//}
+		posActual = _camera.position.clone();
 		//desired values
 		let posDesired = new THREE.Vector3();
 		let rotDesired = angle;
 		rotDesired.order = "ZYX";
-		if(rotDesired.y !== rotActual.y){
-			let y = rotDesired.y%2*Math.PI;
-			if(rotActual.y%2*Math.PI > y){
-				y = rotActual.y-2*Math.PI+y;
+		//clamp pitch
+		if(rotDesired.x > 1.4){
+			rotDesired.x = 1.4;
+		}else if(rotDesired.x < -1.4){
+			rotDesired.x = -1.4;
+		}
+		//Transform both yaw rotations onto [0;2pi]
+
+		rotDesired.y = rotDesired.y % 2*pi;
+		if(rotDesired.y < 0){
+			rotDesired.y += 2*pi;
+		}
+		//rotActual.y = rotActual % 2*pi;
+		if(rotActual.y < 0){
+			rotActual.y += 2*pi;
+		}
+		//check for shortest yaw rotation.
+		let dYRotation = rotDesired.y - rotActual.y;
+		if(dYRotation > pi){
+			let d = rotDesired.y;
+			let a = rotActual.y;
+			if(d > a){
+				rotDesired.y -= 2*pi;
+			}else if(d < a){
+				rotDesired.y += 2*pi;
 			}
-			else{
-				y = rotActual.y+y;
-			}
-			rotDesired.y = y;
 		}
 
-		//if(rotDesired.y > Math.PI){
-		//	rotDesired.y = -2*Math.PI+rotDesired.y;
-		//}
 		let zoomDesired = distance;
 		let desiredLookAtAxis = new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().setFromEuler(rotDesired));
-		//if(rotDesired.x < 0){
-		//	desiredLookAtAxis.set(-desiredLookAtAxis.y,-desiredLookAtAxis.x,desiredLookAtAxis.z);
-		//}else if(rotDesired.x > 0){
-
-		//}
 		if(typeof timeToAnimate === "number"){
 			if(timeToAnimate > 0){
 				timeToAnimate = Math.round(timeToAnimate);
@@ -107,26 +117,36 @@ THREE.EDControls = function(camera,scene) {
 			posDesired = vector3;
 		}
 		//Start animation on next requestAnimationFrame() call
-		cameraTransition.currentAnimationTimeValue = 0;
+		if(!cameraTransition.isInTransition){
+			cameraTransition.originalPosition = posActual;
+			cameraTransition.originalRotation = rotActual;
+			cameraTransition.originalDistance = zoomActual;
+		}else{
+			cameraTransition.originalPosition = _camera.position;
+			cameraTransition.originalRotation = _camera.rotation;
+			cameraTransition.originalDistance = _distanceToTarget;
+		}
 		cameraTransition.desiredPosition = posDesired;
 		cameraTransition.desiredDistance = zoomDesired;
 		cameraTransition.desiredRotation = rotDesired;
 		cameraTransition.anker = vector3;
 		cameraTransition.timeToAnimate = timeToAnimate;
-		cameraTransition.originalPosition = posActual;
-		cameraTransition.originalRotation = rotActual;
-		cameraTransition.originalDistance = zoomActual;
+
+		cameraTransition.currentAnimationTimeValue = 0;
 		cameraTransition.isInTransition = true;
 		//#endregion
 	};
 	this.getCamera = function() {
 		return camera;
 	};
+	this.getFocusTarget = function() {
+		return _target;
+	};
 	//#endregion
 	//#region internal vars
 	var _this = this;
 	var _target = new THREE.Vector3();
-
+	var pi = Math.PI;
 	var _currentCameraRotation = new THREE.Euler();
 	var _camera = camera; //:THREE.Camera
 	var _indicatorGroup;
@@ -183,7 +203,7 @@ THREE.EDControls = function(camera,scene) {
 		desiredDistance : undefined,
 		desiredRotation : undefined,
 		timeToAnimate: 1000,
-		currentAnimationTimeValue: undefined
+		currentAnimationTimeValue: undefined,
 	};
 	//#endregion
 	//#region Setup
@@ -250,7 +270,7 @@ THREE.EDControls = function(camera,scene) {
 		if(code === 1){
 			_mouse.isPressed.mouseLeft = true;
 		}
-		else if(code === 3){
+		else if(code === 3 ||code === 2){
 			_mouse.isPressed.mouseRight = true;
 		}
 	}
@@ -258,7 +278,7 @@ THREE.EDControls = function(camera,scene) {
 		if(code === 1){
 			_mouse.isPressed.mouseLeft = false;
 		}
-		else if(code === 3){
+		else if(code === 3 || code === 2){
 			_mouse.isPressed.mouseRight = false;
 		}
 	}
@@ -636,8 +656,16 @@ THREE.EDControls = function(camera,scene) {
 		//camera rotation
 		if (!cameraTransition.isInTransition&&_this.needsCameraUpdate()) {
 			_camera.rotation.set(_currentCameraRotation.x, _currentCameraRotation.y, _currentCameraRotation.z);
-			 _cameraLookAtAxis = new THREE.Vector3(0,0,-1).applyQuaternion(_camera.quaternion);
+			_cameraLookAtAxis = new THREE.Vector3(0,0,-1).applyQuaternion(_camera.quaternion);
+			if(_camera.rotation.y > pi*2){
+				_currentCameraRotation.y -= 2*pi;
+			} else if (_camera.rotation.y < 0){
+				_currentCameraRotation.y += 2*pi;
+			}
 			_camera.position.set(_target.x+_cameraLookAtAxis.x*_distanceToTarget*-1, _target.y+_cameraLookAtAxis.y*_distanceToTarget*-1, _target.z+_cameraLookAtAxis.z*_distanceToTarget*-1);
+
+	//		console.log(Math.atan2(_cameraLookAtAxis.x,_cameraLookAtAxis.z)+Math.PI,_camera.rotation.y);
+
 		}else if(cameraTransition.isInTransition){
 			let x = (deltaTime/cameraTransition.timeToAnimate) + cameraTransition.currentAnimationTimeValue;
 			if(x >= 1){

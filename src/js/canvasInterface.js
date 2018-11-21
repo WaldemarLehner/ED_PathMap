@@ -93,19 +93,23 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 		let _pos, dist, euler;
 		if (vPos instanceof THREE.Vector3) {
 			_pos = vPos;
-			_pos.x *= -1;
 		} else {
 			throw "first parameter needs to be the position. This has to be a new THREE.Vector3. This parameter is is not optional.";
+		}
+		let oldAnker = _controls.getFocusTarget();
+		if(_pos.x === oldAnker.x && _pos.y === oldAnker.y && _pos.z === oldAnker.z){
+			return; //Gives focus target is already in focus: no need to run the focus animation. 
 		}
 		if (typeof Distance === "number") {
 			if (Distance < 0) {
 				dist = -Distance;
-				console.warn("Second parameter is negative. Multiplying by -1");
+				console.warn("Distance is negative. Multiplying by -1");
 			} else {
 				dist = Distance;
 			}
 		} else {
 			console.warn("Second parameter is not a number. Using a default value of 50 for the distance.");
+			dist = 50;
 		}
 		if (eEuler instanceof THREE.Euler) {
 			euler = eEuler;
@@ -114,7 +118,9 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 				console.warn("z component of Euler angle will not be used.");
 			}
 		} else {
-			eEuler = null;
+			euler = undefined;
+
+
 		}
 		_controls.focusAt(_pos, dist, euler, time);
 	};
@@ -322,10 +328,18 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 	}
 
 	function focusAtSystem(system, _showSystemInfo) {
-		let directionCamera_System = new THREE.Vector3(_camera.position.x - system.coords.x, _camera.position.y - system.coords.y, _camera.position.z - system.coords.z);
-		directionCamera_System.clampLength(100, 10000);
+		let _camera = _controls.getCamera();
+		let directionCamera_System = new THREE.Vector3(_camera.position.x + system.coords.x, _camera.position.y - system.coords.y, _camera.position.z - system.coords.z);
+		let length = directionCamera_System.length();
+		console.log(length);
+		//Clamp length
+		if(length > 1000){
+			length = 1000;
+		}else if(length < 5){
+			length = 5;
+		}
 
-		_this.focusCamera(new THREE.Vector3(system.coords.x, system.coords.y, system.coords.z), directionCamera_System.length(), undefined, 1000);
+		_this.focusCamera(new THREE.Vector3(-system.coords.x, system.coords.y, system.coords.z), length, undefined, 1000);
 		if (_showSystemInfo) {
 			_this.killSystemUI();
 			return generateSystemInfo(system);
@@ -419,7 +433,7 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 				let cmdrRef = new THREE.Sprite(getMarkerMaterial(new PATHMAP.Marker(20).srcName));
 				cmdrRef.renderOrder = 1;
 				cmdrRef.position.set(
-					_services.cmdr.data.coordinates.x,
+					-_services.cmdr.data.coordinates.x,
 					_services.cmdr.data.coordinates.y,
 					_services.cmdr.data.coordinates.z
 				);
@@ -437,7 +451,7 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 				for(let index=0;index < _services.friends.data.length;index++){
 					let friendsicon = new THREE.Sprite(getMarkerMaterial(new PATHMAP.Marker(18).srcName));
 					friendsicon.position.set(
-						_services.friends.data[index].coordinates.x,
+						-_services.friends.data[index].coordinates.x,
 						_services.friends.data[index].coordinates.y,
 						_services.friends.data[index].coordinates.z
 					);
