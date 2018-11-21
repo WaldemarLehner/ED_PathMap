@@ -176,6 +176,11 @@ THREE.EDControls = function(camera,scene) {
 		rotateUp: false,
 		rotateDown: false
 	};
+	var _dPosition_raw = {
+		x: 0,
+		y: 0,
+		z: 0
+	};
 	var _cameraLookAtAxis = new THREE.Vector3();
 	//Mouse Position at the beginning of a mouse movement
 	var _mouse = {
@@ -471,34 +476,66 @@ THREE.EDControls = function(camera,scene) {
 		//#endregion
 		//#region Key Functionality [Moving]
 		//Set up the vector for transforming the focus position without applying camera rotation yet;
-		let vector_raw = new THREE.Vector3();
+		function generateDPositionVector(){
 
-
-		if (!(_areKeysPressed.front && _areKeysPressed.back)) {
-			if (_areKeysPressed.front) {
-				vector_raw.z--;
-			} else if (_areKeysPressed.back) {
-				vector_raw.z++;
+			_dPosition_raw.x = calculateMovementVar(_dPosition_raw.x,_areKeysPressed.left,_areKeysPressed.right);
+			_dPosition_raw.y = calculateMovementVar(_dPosition_raw.y,_areKeysPressed.down,_areKeysPressed.up);
+			_dPosition_raw.z = calculateMovementVar(_dPosition_raw.z,_areKeysPressed.back,_areKeysPressed.front);
+			return new THREE.Vector3(_dPosition_raw.x,_dPosition_raw.y,-_dPosition_raw.z);
+			function calculateMovementVar(variable,isNegative,isPositive){
+				let v = variable;
+				let n = isNegative;
+				let p = isPositive;
+				let dVal = 2;
+				let dValNeg = 4;
+				let dValReturn = 3;
+				if(!((!n&&!p)||(n&&p))){
+					//+x → right
+					//-x → left
+					if(p){
+						if(v===0 || v > 0){
+							v += dVal/1000*dTime;
+							if(v > 1){
+								v = 1;
+							}
+						}else{
+							v += dValNeg/1000*dTime;
+							if(v > 1){
+								v = 1;
+							}
+						}
+					}else if(n){
+						if(v===0 || v < 0){
+							v -= dVal/1000*dTime;
+							if(v < -1){
+								v = -1;
+							}
+						}else{
+							v -= dValNeg/1000*dTime;
+							if(v < -1){
+								v = -1;
+							}
+						}
+					}
+				}else{
+					if(v !== 0){
+						if(v > 0){
+							v -= dValReturn/1000*dTime;
+							if(v < 0){
+								v = 0;
+							}
+						}else{
+							v += dValReturn/1000*dTime;
+							if(v > 0){
+								v = 0;
+							}
+						}
+					}
+				}
+				return v;
 			}
 		}
-		if (!(_areKeysPressed.left && _areKeysPressed.right)) {
-			if (_areKeysPressed.left) {
-				vector_raw.x--;
-			} else if (_areKeysPressed.right) {
-				vector_raw.x++;
-			}
-		}
-		if (!(_areKeysPressed.up && _areKeysPressed.down)) {
-			if (_areKeysPressed.up) {
-				vector_raw.y++;
-			} else if (_areKeysPressed.down) {
-				vector_raw.y--;
-			}
-		}
-
-		//Normalize Vector so that going (for example) front-right is not faster than just front and set it to max speed.
-		//Normalizing gives the vector a length of 1 unit;
-		_dPosition_desired = vector_raw.normalize().multiplyScalar(_this.keySpeed.pan);
+		_dPosition_desired = generateDPositionVector().multiplyScalar(_this.keySpeed.pan);
 		let pan_vector = calculateCurrentDeltaAnkerPosition((dTime / _this.timeToMaxKeySpeed) * _this.keySpeed.pan * _distanceMultiplier/100,dTime);
 		if(!cameraTransition.isInTransition){
 			_target.add(pan_vector);

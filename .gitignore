@@ -6,3 +6,5 @@ edsm_to_sql/edsm_to_sql/Properties/
 edsm_to_sql/\.vs/edsm_to_sql/v15/\.suo
 
 edsm_to_sql/\.vs/edsm_to_sql/v15/sqlite3/storage\.ide
+
+src/data/logs_eric\.json
