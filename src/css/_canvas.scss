@@ -1,4 +1,9 @@
-#3d_container canvas {
-  height: 810px;
-  width: 1440px;
+div.content.fullscreen{
+	div.canvas_container{
+		position:absolute;
+		top:0;
+		left:0;
+		overflow-y: hidden;
+		height:100%;
+	}
 }

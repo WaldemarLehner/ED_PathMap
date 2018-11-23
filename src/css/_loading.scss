@@ -1,0 +1,56 @@
+
+//Styles the loading indication that is shown on load
+.loader.fullscreen{
+	z-index: 1000;
+	user-select: none;
+	background: $loaderColor;
+	display: table;
+  position: absolute;
+	opacity: 0;
+	transition: all 0.5s ease-in-out;
+  height: 100%;
+  width: 100%;
+
+	&.active{
+		opacity: 1;
+	}
+
+	div.loader_valign{
+		//align vertically
+		display: table-cell;
+ 		vertical-align: middle;
+
+		div{
+			margin-left: auto;
+		  margin-right: auto;
+		  width: 600px;
+			text-align: center;
+			p {
+				text-transform: uppercase;
+				text-align: center;
+				padding: 50px 0;
+					font-family: 'Rubik', sans-serif;
+					font-weight: 400;
+					&#loader_text_big{
+						color: $loader_color_text1;
+						font-size: 30px;
+
+					}
+					&#loader_text_small{
+						color: $loader_color_text2;
+						font-size: 20px;
+					}
+			}
+			img{
+				$size: 100px;
+				padding: 600px-2*$size , 20px;
+				width: $size;
+				height: $size;
+				margin: 0 auto;
+			}
+		}
+
+	}
+
+
+}
