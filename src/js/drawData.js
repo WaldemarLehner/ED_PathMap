@@ -66,6 +66,8 @@ _connectionList = connectionList;
   var scene_skybox = new THREE.Scene();
   var scene_main = new THREE.Scene();
   var scene_ui = new THREE.Scene();
+  var scene_ui1 = new THREE.Scene();
+  var scene_ui2 = new THREE.Scene();
   var camera = new THREE.PerspectiveCamera( 80, canvas_width/canvas_height,0.1,600000);
   camera.position.set(0.5,0.2,0.1);
   var renderer = new THREE.WebGLRenderer();
@@ -162,7 +164,6 @@ let _scale = chroma.scale([_COLOR_DEFINITIONS.min,_COLOR_DEFINITIONS.max]).mode(
   }
 
 //First seperate in individual sectors
-console.log(connectionList);
 //#endregion
 //#region Draw System Dots
 //#region pregenerate required materials
@@ -233,14 +234,14 @@ for(let sector in pointSectors){
   geometryLOD2.computeBoundingSphere();
   //Wait for all shaders to load - if it takes longer than 5 s → throw error
   let t0 = Date.now();
-  while(typeof __SHADERS.LOD0.vertex === "undefined" || typeof __SHADERS.LOD0.fragment === "undefined"){
-    if(Date.now()-t0 > 5000){
-      throw "Could not retrieve Shader files.";
-    }
-  }
+  let __SHADERS = {
+    vertex:"uniform float amplitude;attribute float size;attribute vec3 customColor;varying vec3 vColor;void main() {vColor = customColor;vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );gl_PointSize = size * ( 300.0 / -mvPosition.z );gl_Position = projectionMatrix * mvPosition;}",
+    fragment:"uniform vec3 color;uniform sampler2D texture;varying vec3 vColor;void main() {gl_FragColor = vec4( color * vColor, 1.0 );gl_FragColor = gl_FragColor * texture2D( texture, gl_PointCoord );}"
+  };
+
   let LOD0Shader = new THREE.ShaderMaterial({
-    vertexShader: __SHADERS.LOD0.vertex,
-    fragmentShader: __SHADERS.LOD0.fragment,
+    vertexShader: __SHADERS.vertex,
+    fragmentShader: __SHADERS.fragment,
     uniforms:{
       amplitude: {value:1.0},
       color: {value: new THREE.Color(0xFFFFFF)},
@@ -250,8 +251,8 @@ for(let sector in pointSectors){
     transparent:true
   });
   let LOD1Shader = new THREE.ShaderMaterial({
-    vertexShader: __SHADERS.LOD0.vertex,
-    fragmentShader: __SHADERS.LOD0.fragment,
+    vertexShader: __SHADERS.vertex,
+    fragmentShader: __SHADERS.fragment,
     uniforms:{
       amplitude: {value:1.0},
       color: {value: new THREE.Color(0xFFFFFF)},
@@ -414,6 +415,8 @@ function updateLOD(bool){
 }
 //#endregion
 //#region Skybox
+UI.Loader.updateText1();
+UI.Loader.updateText2("Load skybox images.");
 let skybox_material_data = [
   new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("src/img/skybox/north.png"),side:THREE.BackSide}),
   new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("src/img/skybox/south.png"),side:THREE.BackSide}),
@@ -460,6 +463,10 @@ function animate(){
     renderer.render(scene_main,camera);
     renderer.clearDepth();
     renderer.render(scene_ui,camera);
+    renderer.clearDepth();
+    renderer.render(scene_ui1,camera);
+    renderer.clearDepth();
+    renderer.render(scene_ui2,camera);
     controls.update();
   }
 }
@@ -483,9 +490,15 @@ function update(){
 
 }
 //Add an Interface to global scope
-window.canvasInterface = new PATHMAP.Interface(camera,[scene_skybox,scene_main,scene_ui],controls,linesRef,pointsRef,logList,systemList);
+window.canvasInterface = new PATHMAP.Interface(camera,[scene_skybox,scene_main,scene_ui,scene_ui1,scene_ui2],controls,linesRef,pointsRef,logList,systemList);
 
 //Start with animation loop
+UI.Loader.updateText2("Done");
+setTimeout(function(){
+  UI.Loader.hide();
+},1000);
+canvasInterface.focus.last(true);
+UI.update();
 animate();
 window.addEventListener("resize",function(){
   camera.aspect = window.innerWidth/window.innerHeight;

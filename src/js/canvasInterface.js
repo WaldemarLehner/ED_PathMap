@@ -32,7 +32,6 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 	}
 
 
-
 	//#region API
 	//#region GET
 	this.getCamera = function() {
@@ -47,17 +46,26 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 	this.getControls = function() {
 		return _controls;
 	};
+	this.getFocusIndex = function() {
+		return _currentIndex;
+	};
 	this.getSystemInFocus = function() {
 		return getSystemByIndex(_currentIndex);
 	};
-	this.killSystemUI = function() {
-		if (typeof _sysUI !== "undefined") {
-			_scenes[2].remove(_scenes[2].getObjectByName("systemInfo"));
-			_sysUI = undefined;
-		}
+	this.getSysList = function() {
+		return _sysList;
+	};
+	this.getLogList = function(){
+		return _logList;
 	};
 	//#endregion
 	//#region SET
+	this.killSystemUI = function() {
+		if (typeof _sysUI !== "undefined") {
+			_scenes[4].remove(_scenes[4].getObjectByName("systemInfo"));
+			_sysUI = undefined;
+		}
+	};
 	this.addMarker = function(vPos, marker, returnMarker) {
 		if (!(marker instanceof PATHMAP.Marker)) {
 			throw "Expected a PATHMAP.Marker object as 2nd argument.";
@@ -77,7 +85,7 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 		if (retMarker) {
 			return markerObj;
 		} else {
-			return this;
+			return _this;
 		}
 	};
 	//#region Focus Functions
@@ -85,19 +93,23 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 		let _pos, dist, euler;
 		if (vPos instanceof THREE.Vector3) {
 			_pos = vPos;
-			_pos.x *= -1;
 		} else {
 			throw "first parameter needs to be the position. This has to be a new THREE.Vector3. This parameter is is not optional.";
+		}
+		let oldAnker = _controls.getFocusTarget();
+		if(_pos.x === oldAnker.x && _pos.y === oldAnker.y && _pos.z === oldAnker.z){
+			return; //Gives focus target is already in focus: no need to run the focus animation. 
 		}
 		if (typeof Distance === "number") {
 			if (Distance < 0) {
 				dist = -Distance;
-				console.warn("Second parameter is negative. Multiplying by -1");
+				console.warn("Distance is negative. Multiplying by -1");
 			} else {
 				dist = Distance;
 			}
 		} else {
 			console.warn("Second parameter is not a number. Using a default value of 50 for the distance.");
+			dist = 50;
 		}
 		if (eEuler instanceof THREE.Euler) {
 			euler = eEuler;
@@ -106,7 +118,9 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 				console.warn("z component of Euler angle will not be used.");
 			}
 		} else {
-			eEuler = null;
+			euler = undefined;
+
+
 		}
 		_controls.focusAt(_pos, dist, euler, time);
 	};
@@ -115,8 +129,7 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 			focusAtSystem(getSystemByIndex(_currentIndex), showSystemData);
 		},
 		next: function(showSystemData) {
-			_currentIndex = (_currentIndex < _logList.length - 1) ? (_currentIndex = _currentIndex++) : (_logList.length - 1);
-			_currentIndex++;
+			_currentIndex = (_currentIndex < _logList.length - 1) ? (_currentIndex += 1) : (_logList.length - 1);
 			focusAtSystem(getSystemByIndex(_currentIndex), showSystemData);
 		},
 		previous: function(showSystemData) {
@@ -147,9 +160,9 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 			focusAtSystem(getSystemByIndex(_currentIndex), showSystemData);
 
 		}
-		//TODO ... should player be added here?
 	};
 	//#endregion
+	//#region UI settings
 	this.showSystemDots = function(bool) {
 		if (typeof bool !== "boolean") {
 			throw "Given argument is not a boolean value.";
@@ -161,6 +174,19 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 			pointsref[sector].visible = bool;
 		}
 		return _this;
+	};
+	this.showSysInfo = function(bool) {
+		if(typeof bool !== "boolean"){
+			console.warn("Given paremter is not typeof boolean. Ignoring request.");
+		}else{
+			_showSysInfo = bool;
+			if(bool){
+				_this.killSystemUI();
+				generateSystemInfo(_this.getSystemInFocus(_this.getFocusIndex()));
+			}else{
+				_this.killSystemUI();
+			}
+		}
 	};
 	this.showSystemLines = function(bool) {
 		if (typeof bool !== "boolean") {
@@ -175,15 +201,36 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 		}
 		return _this;
 	};
+	this.showCmdrPosition = function(bool) {
+		if(typeof bool !== "boolean"){
+			console.warn("Given parameter is not typeof boolean. Ignoring request.");
+			return;
+		}
+		_services.cmdr.isActive = bool;
+		_services.cmdr.reference.visible = _services.cmdr.isActive;
+
+	};
+	this.showFriendsPosition = function(bool) {
+		if(typeof bool !== "boolean"){
+			console.warn("Given parameter is not typeof boolean. Ignoring request.");
+			return;
+		}
+		_services.friends.isActive = bool;
+		_services.friends.reference.visible = _services.friends.isActive;
+		_services.friends.reference.needsUpdate = true;
+	};
+	//#endregion
 	//#endregion
 	//#region private Functions
 	function getMarkerMaterial(materialName) {
 		let spriteMap = new THREE.TextureLoader().load("src/img/ui/markers/" + materialName + ".png");
+		spriteMap.minFilter = THREE.LinearFilter;
 		let mat = new THREE.SpriteMaterial({
 			map: spriteMap,
 			color: 0xFFFFFF
 		});
 		mat.sizeAttenuation = false;
+
 		return mat;
 	}
 
@@ -203,6 +250,9 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 	}
 
 	function generateSystemInfo(sysInfo, returnObj) {
+		if(!_showSysInfo){
+			return;
+		}
 		let canvas = document.createElement("canvas");
 		canvas.width = 512;
 		canvas.height = 128;
@@ -242,13 +292,14 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 		});
 		material.sizeAttenuation = false;
 		let sysText = new THREE.Sprite(material);
+		sysText.renderOrder = 0;
 		sysText.position.set(-sysInfo.coords.x, sysInfo.coords.y, sysInfo.coords.z);
 		sysText.center.x = -0.05;
 		let sizeDivider = 7.5;
 		sysText.scale.set(4 / sizeDivider, 1 / sizeDivider, 1);
 		sysText.name = "systemInfo";
 		_sysUI = sysText;
-		_scenes[2].add(sysText);
+		_scenes[4].add(sysText);
 		return (returnObj) ? _sysUI : _this;
 
 		function roundRect(x0, y0, x1, y1, r, color,makeStroke) {
@@ -276,13 +327,20 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 		}
 	}
 
-	function focusAtSystem(system, showSystemInfo) {
-		console.log(system);
-		let directionCamera_System = new THREE.Vector3(_camera.position.x - system.coords.x, _camera.position.y - system.coords.y, _camera.position.z - system.coords.z);
-		directionCamera_System.clampLength(100, 10000);
+	function focusAtSystem(system, _showSystemInfo) {
+		let _camera = _controls.getCamera();
+		let directionCamera_System = new THREE.Vector3(_camera.position.x + system.coords.x, _camera.position.y - system.coords.y, _camera.position.z - system.coords.z);
+		let length = directionCamera_System.length();
+		console.log(length);
+		//Clamp length
+		if(length > 1000){
+			length = 1000;
+		}else if(length < 5){
+			length = 5;
+		}
 
-		_this.focusCamera(new THREE.Vector3(system.coords.x, system.coords.y, system.coords.z), directionCamera_System.length(), undefined, 1000);
-		if (showSystemInfo) {
+		_this.focusCamera(new THREE.Vector3(-system.coords.x, system.coords.y, system.coords.z), length, undefined, 1000);
+		if (_showSystemInfo) {
 			_this.killSystemUI();
 			return generateSystemInfo(system);
 		}
@@ -297,10 +355,123 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 	var _pointsRef = {};
 	var _linesRef = {};
 	var _this = this;
+	var _showSysInfo = true;
 	var _currentIndex = 0;
 	var _logList = logList;
 	var _sysList = sysList;
-	var _services = {};
+	var _services = {
+		friends: {
+			data: {},
+			reference: undefined,
+			isActive: true
+		},
+		cmdr: {
+			data: {},
+			reference: undefined,
+			isActive: true
+		},
+		interval: undefined
+	};
+	//#endregion
+	//#region Setup of Services
+	_services.interval = setAjaxInterval(60000);
+	function setAjaxInterval(intervalTime){
+		//in ms. If it takes longer, an error will be thrown
+		getAjaxData();
+		let interval = setInterval(getAjaxData,intervalTime);
+		//This is being run in a loop;
+		function getAjaxData(){
+			let successCount = 0;
+			let returnData = {};
+			//CMDR Ajax
+			$.ajax({
+				url: "/src/data/cmdr.json",
+				success: function(result){
+					successCount++;
+					returnData.cmdr = result;
+					if(successCount == 2){
+						parseData();
+					}
+				},
+				error: function(a,b,c){
+					throw "Could not get data from CMDR API.\n"+b;
+				}
+			});
+			//Friends Ajax
+			$.ajax({
+				url: "/src/data/friends.json",
+				success: function(result){
+					successCount++;
+					returnData.friends = result;
+					if(successCount == 2){
+						parseData();
+					}
+				},
+				error: function(a,b,c){
+					throw "Could not get data from Friends API.\n"+b;
+				}
+			});
+
+			function parseData(){
+				if(returnData.cmdr.msgnum !== 100){
+					throw "Error: "+returnData.cmdr.msg;
+				}
+				_services.cmdr.data = returnData.cmdr;
+				_services.friends.data = returnData.friends;
+				addIconsToScene();
+			}
+			function addIconsToScene(){
+				//Delete Old Instances if Exists
+				if(typeof _services.cmdr.reference !== "undefined"){
+					_scenes[3].remove(_services.cmdr.reference);
+				}
+				if(typeof _services.friends.reference !== "undefined"){
+					_scenes[2].remove(_services.friends.reference);
+				}
+				let sizeDivider = 20;
+				//Generate CMDR Element
+				let cmdrRef = new THREE.Sprite(getMarkerMaterial(new PATHMAP.Marker(20).srcName));
+				cmdrRef.renderOrder = 1;
+				cmdrRef.position.set(
+					-_services.cmdr.data.coordinates.x,
+					_services.cmdr.data.coordinates.y,
+					_services.cmdr.data.coordinates.z
+				);
+				cmdrRef.center.y = 0;
+				cmdrRef.scale.set(1 / 20, 1.7 / 20, 1);
+				_services.cmdr.reference = cmdrRef;
+				cmdrRef.visible = _services.cmdr.isActive;
+				cmdrRef.userData = {
+					url: _services.cmdr.data.url
+				};
+				_scenes[3].add(cmdrRef);
+
+				//generate Friends Group
+				let friendsRef = new THREE.Group();
+				for(let index=0;index < _services.friends.data.length;index++){
+					let friendsicon = new THREE.Sprite(getMarkerMaterial(new PATHMAP.Marker(18).srcName));
+					friendsicon.position.set(
+						-_services.friends.data[index].coordinates.x,
+						_services.friends.data[index].coordinates.y,
+						_services.friends.data[index].coordinates.z
+					);
+					friendsicon.center.y = 0;
+					friendsicon.scale.set(1 / 20, 1.2 / 20, 1);
+					friendsicon.userData = {
+						url: _services.friends.data[index].cmdrUrl,
+						name: _services.friends.data[index].cmdrName
+					};
+					friendsRef.add(friendsicon);
+				}
+				friendsRef.visible = _services.friends.isActive;
+				friendsRef.renderOrder = 2;
+				_services.friends.reference = friendsRef;
+				_scenes[2].add(friendsRef);
+			}
+
+
+		}
+	}
 	//#endregion
 };
 
@@ -328,14 +499,15 @@ PATHMAP.Marker = function(indexOrstring) {
 			"mission",
 			"ship",
 			"friends",
-			"wing" // 19
+			"wing", // 19
+			"cmdr"
 		];
 		if (indexOrstring < 0) {
 			console.warn("Second parameter, if number, has to be positive. Setting to 0");
 			indexOrstring = 0;
 		}
 		if (indexOrstring > iA.length - 1) {
-			console.log("Given index is out of bounds. Clamping to biggest possible value: " + iA.length - 1);
+			console.warn("Given index is out of bounds. Clamping to biggest possible value: " + iA.length - 1);
 			indexOrstring = iA.length - 1;
 		}
 		this.srcName = iA[indexOrstring];
