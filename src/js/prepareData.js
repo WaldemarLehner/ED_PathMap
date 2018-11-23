@@ -5,8 +5,9 @@ Requires jQuery
 */
 
 //Get Travel Log
+
 $.ajax({
-  url:"/src/data/logs.json",
+  url:(typeof __DATASOURCE__.api.logs === "undefined") ? __DATASOURCE__.default+"src/data/logs.json" : __DATASOURCE__.api.logs,
   success: function(data){
     $(document).ready(function(){
       UI.Loader.updateText1();
