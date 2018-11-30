@@ -4,6 +4,26 @@ Requires jQuery to function properly;
 */
 
 $(document).ready(function(){
+//* * * Daterange * * */
+
+  $("#daterange").daterangepicker({
+    "showDropdowns": true,
+    "minYear": 2014,
+    "maxYear": 2020,//new Date().getUTCFullYear(),
+    "locale":{
+      "format":"YYYY-MM-DD",
+      "seperator": " - "
+    }
+    });
+  $("#daterange").on("cancel.daterangepicker hide.daterangepicker",function(e,picker){
+    $("#daterange").addClass("hidden");
+    $("#check_limit_selection > input").prop("checked",false);
+  });
+  $("#daterange").on("apply.daterangepicker",function(e,picker){
+    let startDate = picker.startDate.format("YYYY-MM-DD");
+    let endDate = picker.endDate.format("YYYY-MM-DD");
+    window.open((window.location.href).split("?")[0]+"?[DATE]"+startDate+";"+endDate+"[/DATE]","_self");
+  });
 /* * *  UI Event Listeners  * * */
   $(".action-settings").click(function(){
     if($(this).hasClass("active")){
@@ -75,7 +95,15 @@ $(document).ready(function(){
       canvasInterface.showFriendsPosition($("#check_show_friend_pos > input").is(":checked"));
   });
   $("#check_limit_selection").click(function(){
-
+    let isChecked = $("#check_limit_selection > input").is(":checked");
+    if(!isChecked){
+      $("#daterange").addClass("hidden");
+      if(__DATESET_LIMITED_BY_DATE__){
+        window.open((window.location.href).split("?")[0],"_self");
+      }
+    }else{
+      $("#daterange").removeClass("hidden");
+    }
   });
 //#endregion
 });

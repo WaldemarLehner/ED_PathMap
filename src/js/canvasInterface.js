@@ -98,7 +98,7 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 		}
 		let oldAnker = _controls.getFocusTarget();
 		if(_pos.x === oldAnker.x && _pos.y === oldAnker.y && _pos.z === oldAnker.z){
-			return; //Gives focus target is already in focus: no need to run the focus animation. 
+			return; //Gives focus target is already in focus: no need to run the focus animation.
 		}
 		if (typeof Distance === "number") {
 			if (Distance < 0) {
@@ -223,7 +223,8 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 	//#endregion
 	//#region private Functions
 	function getMarkerMaterial(materialName) {
-		let spriteMap = new THREE.TextureLoader().load("src/img/ui/markers/" + materialName + ".png");
+		let url = (typeof __DATASOURCE__.ui.markers === "undefined")?__DATASOURCE__.default+"src/img/ui/markers/":__DATASOURCE__.ui.markers;
+		let spriteMap = new THREE.TextureLoader().load( url+ materialName + ".png");
 		spriteMap.minFilter = THREE.LinearFilter;
 		let mat = new THREE.SpriteMaterial({
 			map: spriteMap,
@@ -331,7 +332,6 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 		let _camera = _controls.getCamera();
 		let directionCamera_System = new THREE.Vector3(_camera.position.x + system.coords.x, _camera.position.y - system.coords.y, _camera.position.z - system.coords.z);
 		let length = directionCamera_System.length();
-		console.log(length);
 		//Clamp length
 		if(length > 1000){
 			length = 1000;
@@ -385,7 +385,7 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 			let returnData = {};
 			//CMDR Ajax
 			$.ajax({
-				url: "/src/data/cmdr.json",
+				url: (typeof __DATASOURCE__.api.cmdr === "undefined")?__DATASOURCE__.default+"src/data/cmdr.json":__DATASOURCE__.api.cmdr,
 				success: function(result){
 					successCount++;
 					returnData.cmdr = result;
@@ -399,7 +399,7 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 			});
 			//Friends Ajax
 			$.ajax({
-				url: "/src/data/friends.json",
+				url: (typeof __DATASOURCE__.api.friends === "undefined")?__DATASOURCE__.default+"src/data/friends.json":__DATASOURCE__.api.friends,
 				success: function(result){
 					successCount++;
 					returnData.friends = result;

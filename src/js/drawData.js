@@ -417,13 +417,14 @@ function updateLOD(bool){
 //#region Skybox
 UI.Loader.updateText1();
 UI.Loader.updateText2("Load skybox images.");
+let skybox_url = (typeof __DATASOURCE__.skybox)?__DATASOURCE__.default+"/src/img/skybox/":__DATASOURCE__.skybox;
 let skybox_material_data = [
-  new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("src/img/skybox/north.png"),side:THREE.BackSide}),
-  new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("src/img/skybox/south.png"),side:THREE.BackSide}),
-  new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("src/img/skybox/up.png"),side:THREE.BackSide}),
-  new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("src/img/skybox/down.png"),side:THREE.BackSide}),
-  new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("src/img/skybox/east.png"),side:THREE.BackSide}),
-  new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("src/img/skybox/west.png"),side:THREE.BackSide}),
+  new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load(skybox_url+"north.png"),side:THREE.BackSide}),
+  new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load(skybox_url+"south.png"),side:THREE.BackSide}),
+  new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load(skybox_url+"up.png"),side:THREE.BackSide}),
+  new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load(skybox_url+"down.png"),side:THREE.BackSide}),
+  new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load(skybox_url+"east.png"),side:THREE.BackSide}),
+  new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load(skybox_url+"west.png"),side:THREE.BackSide}),
 ];
 
 let skybox = new THREE.Mesh(new THREE.CubeGeometry(500000,500000,500000),skybox_material_data);
@@ -435,7 +436,11 @@ scene_skybox.add(skybox);
 //#endregion
 //#region Galactic Plane
 //Draw a galactic plane
-let galplane_material = new THREE.MeshBasicMaterial( {map: new THREE.TextureLoader().load("src/img/skybox/galplane.png"), side:THREE.DoubleSide,color:0xFFFFFF,transparent:true,opacity:0.8} );
+let galmaptexture = new THREE.TextureLoader().load(
+  (typeof __DATASOURCE__.galplane === "undefined")?__DATASOURCE__.default+"src/img/skybox/galplane.png":__DATASOURCE__.galplane
+);
+galmaptexture.minFilter =  THREE.LinearFilter;
+let galplane_material = new THREE.MeshBasicMaterial( {map: galmaptexture, side:THREE.DoubleSide,color:0xFFFFFF,transparent:true,opacity:0.8} );
 let galplane = new THREE.Mesh(new THREE.PlaneGeometry(100000,100000),galplane_material);
 galplane.rotation.set(Math.PI/2,0,0);
 galplane.position.set(0,0,26000);
