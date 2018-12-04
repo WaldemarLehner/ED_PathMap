@@ -215,10 +215,11 @@ THREE.EDControls = function(camera,scene) {
 	//Set up indicator
 	initIndicator();
 	function initIndicator(){
+		let url = (typeof __DATASOURCE__.ui.focusElement === "undefined")?__DATASOURCE__.default+"src/img/ui/focus/":__DATASOURCE__.ui.focusElement;
 		let plane_material_data = [
-			new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("src/img/ui/focus/arrow_pan.png"),color:0xFFFFFF,side: THREE.DoubleSide,transparent:true,premultipliedAlpha:true}),
-			new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("src/img/ui/focus/arrow_vertical.png"),color:0xFFFFFF,side: THREE.DoubleSide,transparent:true,premultipliedAlpha:true}),
-			new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("src/img/ui/focus/focus_circle.png"),color:0xFFFFFF,side: THREE.DoubleSide,transparent:true,premultipliedAlpha:true})
+			new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load(url+"arrow_pan.png"),color:0xFFFFFF,side: THREE.DoubleSide,transparent:true,premultipliedAlpha:true}),
+			new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load(url+"arrow_vertical.png"),color:0xFFFFFF,side: THREE.DoubleSide,transparent:true,premultipliedAlpha:true}),
+			new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load(url+"focus_circle.png"),color:0xFFFFFF,side: THREE.DoubleSide,transparent:true,premultipliedAlpha:true})
 		];
 		_indicatorGroup = new THREE.Group();
 		let plane_circle = new THREE.Mesh(new THREE.PlaneGeometry(10,10),plane_material_data[2]);
