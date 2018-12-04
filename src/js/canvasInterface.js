@@ -192,13 +192,7 @@ PATHMAP.Interface = function(camera, scenes, controls, linesref, pointsref, logL
 		if (typeof bool !== "boolean") {
 			throw "Given argument is not a boolean value.";
 		}
-		for (let sector in linesref) {
-			if (!linesref.hasOwnProperty(sector)) {
-				continue;
-			}
-			linesref[sector].userData.lockVisibility = !bool;
-			linesref[sector].visible = bool;
-		}
+		linesref.visible = bool;
 		return _this;
 	};
 	this.showCmdrPosition = function(bool) {

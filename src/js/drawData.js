@@ -78,7 +78,6 @@ _connectionList = connectionList;
 //#region Check data for integrity
 if(typeof logList !== "object"){
   console.error("No loglist passed");
-
 }
 else if(typeof logList[0].name === "undefined" || typeof logList[0].date === "undefined"){
   console.error("Given logs appear to have a wrong format.");
@@ -115,54 +114,33 @@ let lines = new THREE.Group();
 let points = new THREE.Group();
 let _scale = chroma.scale([_COLOR_DEFINITIONS.min,_COLOR_DEFINITIONS.max]).mode("lrgb");
 //#region Draw Connection Lines
- //TODO: Think about using BufferGeometry's.
-  for(let entry in connectionList){
-    try{
-      //skip loop if property is from prototype
-      if(!connectionList.hasOwnProperty(entry)){continue;}
-      let system1 = systemList[connectionList[entry].sys1];
-      let system2 = systemList[connectionList[entry].sys2];
-      let x1 = -system1.x;
-      let y1 = system1.y;
-      let z1 = system1.z;
-      let x2 = -system2.x;
-      let y2 = system2.y;
-      let z2 = system2.z;
-      //Use System1 as the reference point to determine to which Sector the connection belongs to.
-      let sectorCoords = getSectorCoordinates(x1,y1,z1);
-      let sectorName = sectorCoords.x+":"+sectorCoords.y+":"+sectorCoords.z;
-      let group;
-      let posX,posY,posZ;
-      if(typeof linesRef[sectorName] === "undefined"){
-        group = new THREE.Group();
-        group.name = sectorName;
-      }else{
-        group = linesRef[sectorName];
-      }
-      posX = ((sectorCoords.x * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.x)+0.5*_USER_SECTOR_SIZE;
-      posY = ((sectorCoords.y * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.y)+0.5*_USER_SECTOR_SIZE;
-      posZ = ((sectorCoords.z * _USER_SECTOR_SIZE) - _USER_SECTOR_OFFSET.z)+0.5*_USER_SECTOR_SIZE;
-
-      group.position.set(posX,posY,posZ);
-      //Material Generation
-      let count = (connectionList[entry].tosys1count+connectionList[entry].tosys2count);
-      let fraction = (((count-1 / maxConnectionVisitCount-1)*0.1) > 1) ? 1 : ((count-1/maxConnectionVisitCount-1)*0.1);
-      let material = new THREE.LineBasicMaterial({color:new THREE.Color(_scale(fraction).num()),opacity:0.5+(fraction/2),transparent:true});
-      let geometry = new THREE.BufferGeometry();
-      let vertices = new Float32Array([(x1-posX),y1-posY,z1-posZ,(x2-posX),y2-posY,z2-posZ]);
-      geometry.addAttribute("position",new THREE.BufferAttribute(vertices,3));
-      let object = new THREE.Line(geometry,material);
-      object.name = entry;
-      group.userData = {lockVisibility:false};
-      group.add(object);
-      linesRef[sectorName] = group;
-    }
-    catch(e){
-      console.warn("Could not load connection");
-      console.warn(e);
-    }
+let systemConnectionPositionBuffer = []; // x y z
+let systemConnectionColorBuffer = []; // r g b
+for(let entryID = 0;entryID < logList.length-1;entryID++){
+  let thisSystem = logList[entryID].name;
+  let nextSystem = logList[entryID+1].name;
+  let connectionName = (thisSystem<nextSystem)?thisSystem+":"+nextSystem:nextSystem+":"+thisSystem;
+  let count = connectionList[connectionName].tosys1count+connectionList[connectionName].tosys2count;
+  //get color based on count/maxcount
+  let fraction = (((count-1 / maxConnectionVisitCount-1)*0.1) > 1) ? 1 : ((count-1/maxConnectionVisitCount-1)*0.1);
+  let color = new THREE.Color(_scale(fraction).num());
+  systemConnectionPositionBuffer.push(-systemList[thisSystem].x,systemList[thisSystem].y,systemList[thisSystem].z);
+  systemConnectionColorBuffer.push(color.r,color.g,color.b);
+  if(entryID === logList.length-2){
+    systemConnectionPositionBuffer.push(-systemList[nextSystem].x,systemList[nextSystem].y,systemList[nextSystem].z);
+    systemConnectionColorBuffer.push(color.r,color.g,color.b);
   }
-
+}
+let lineGeometry = new THREE.BufferGeometry();
+lineGeometry.addAttribute("position",new THREE.Float32BufferAttribute(systemConnectionPositionBuffer,3));
+lineGeometry.addAttribute("color",new THREE.Float32BufferAttribute(systemConnectionColorBuffer,3));
+let lineObject = new THREE.Line(lineGeometry,new THREE.LineBasicMaterial({
+  color: 0xFFFFFF,
+  vertexColors: THREE.VertexColors,
+  opacity: 0.3,
+  transparent: true
+}));
+scene_main.add(lineObject);
 //First seperate in individual sectors
 //#endregion
 //#region Draw System Dots
@@ -317,12 +295,7 @@ function generateSectorList_points(){
 }
 //#endregion
 //#region Sector Functions
-for(let entry in linesRef){
-  if(!linesRef.hasOwnProperty(entry)){
-    continue;
-  }
-  scene_main.add(linesRef[entry]);
-}
+
 for(let entry in pointsRef){
   if(!pointsRef.hasOwnProperty(entry)){
     continue;
@@ -363,56 +336,39 @@ function getSectorCoordinates(x1,y1,z1){
   let z = Math.floor((z1+offset.z)/size);
   return {x:x,y:y,z:z};
 }
-function updateLOD(bool){
-  if(bool){
-    updatePointsThisCycle = false;
+function updateLOD(){
     //Point Handling
-    for(let entry in pointsRef){
-      let dist = pointsRef[entry].position.distanceTo(camera.position);
-      let e = pointsRef[entry];
+for(let entry in pointsRef){
+  let dist = pointsRef[entry].position.distanceTo(camera.position);
+  let e = pointsRef[entry];
 
-      if(dist < _USER_SECTOR_POINTS_RENDER_LOD1_DISTANCE){
-        if(pointsRef[entry].userData.lodState !== 0){
-          pointsRef[entry].userData.lodState = 0;
-            e.children[0].visible = true;
-            e.children[1].visible = false;
-            e.children[2].visible = false;
-        }
-      }
-      else if(dist < _USER_SECTOR_POINTS_RENDER_LOD2_DISTANCE){
-        if(pointsRef[entry].userData.lodState !== 1){
-          if(pointsRef[entry].userData.lodState === 2){
-            e.userData.lodState = 1;
-            e.children[0].visible = e.children[2].visible = false;
-            e.children[1].visible = true;
-          }
-        }
-      }
-      else{
-        if(pointsRef[entry].userData.lodState !== 2){
-          pointsRef[entry].userData.lodState = 2;
-            e.children[0].visible = e.children[1].visible = false;
-            e.children[2].visible = true;
-        }
+  if(dist < _USER_SECTOR_POINTS_RENDER_LOD1_DISTANCE){
+    if(pointsRef[entry].userData.lodState !== 0){
+      pointsRef[entry].userData.lodState = 0;
+        e.children[0].visible = true;
+        e.children[1].visible = false;
+        e.children[2].visible = false;
+    }
+  }
+  else if(dist < _USER_SECTOR_POINTS_RENDER_LOD2_DISTANCE){
+    if(pointsRef[entry].userData.lodState !== 1){
+      if(pointsRef[entry].userData.lodState === 2){
+        e.userData.lodState = 1;
+        e.children[0].visible = e.children[2].visible = false;
+        e.children[1].visible = true;
       }
     }
   }
   else{
-    updatePointsThisCycle = true;
-    //Lines Handling
-    for(let entry in linesRef){
-      let dist = linesRef[entry].position.distanceTo(camera.position);
-      if(linesRef[entry].userData.lockVisibility === false){
-        if(dist > _USER_SECTOR_LINES_RENDER_DISTANCE){
-          //Dont render sector
-          linesRef[entry].visible = false;
-        }else{
-          linesRef[entry].visible = true;
-        }
-      }
+    if(pointsRef[entry].userData.lodState !== 2){
+      pointsRef[entry].userData.lodState = 2;
+        e.children[0].visible = e.children[1].visible = false;
+        e.children[2].visible = true;
     }
   }
 }
+}
+
 //#endregion
 //#region Skybox
 UI.Loader.updateText1();
@@ -495,7 +451,7 @@ function update(){
 
 }
 //Add an Interface to global scope
-window.canvasInterface = new PATHMAP.Interface(camera,[scene_skybox,scene_main,scene_ui,scene_ui1,scene_ui2],controls,linesRef,pointsRef,logList,systemList);
+window.canvasInterface = new PATHMAP.Interface(camera,[scene_skybox,scene_main,scene_ui,scene_ui1,scene_ui2],controls,lineObject,pointsRef,logList,systemList);
 
 //Start with animation loop
 UI.Loader.updateText2("Done");

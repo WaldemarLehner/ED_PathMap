@@ -126,15 +126,13 @@ function filterData(json){
       $("#check_limit_selection > input").prop("checked",true);
       $("#daterange").removeClass("hidden");
       let daterange_txt = (moment(dates[0]).format("YYYY-MM-DD"))+" - "+((moment(dates[1]).format("YYYY-MM-DD")));
-      console.log(daterange_txt);
       $("#daterange").val(daterange_txt);
       if(moment(dates[0]).unix()>moment(dates[1])){
         dates = dates.reverse();
         console.warn("First date was greater than last date. Reversing order.");
       }
 
-      console.log(dates);
-      console.log(data);
+
       //Get lower limit
       return data.splice(getLowerLimit(moment(dates[0]).unix()),getUpperLimit(moment(dates[1]).unix()));
 
