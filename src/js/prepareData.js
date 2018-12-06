@@ -133,12 +133,20 @@ function filterData(json){
       }
 
 
-      //Get lower limit
-      return data.splice(getLowerLimit(moment(dates[0]).unix()),getUpperLimit(moment(dates[1]).unix()));
+      let lowerlimit = getLowerLimit(moment(dates[0]).unix());
+      let upperLimit = getUpperLimit(moment(dates[1]).unix());
+      console.debug(lowerlimit,upperLimit);
+      return data.splice(lowerlimit,upperLimit);
 
     }
     function getLowerLimit(date){
       let index = 0;
+      //Check lower bound
+      if(moment(data[0].dateVisited).unix() > date){
+        return 0;
+      }else if(moment(data[data.length-1].dateVisited).unix() < date){
+        return data.length-1;
+      }
       for(let i = 0;i<data.length;i++){
         if(moment(data[i].dateVisited).unix()>date){
           return i-1;
@@ -148,6 +156,11 @@ function filterData(json){
       return 0;
     }
     function getUpperLimit(date){
+      if(moment(data[data.length-1].dateVisited).unix() < date){
+        return data.length-1;
+      }else if(moment(data[0].dateVisited).unix() > date){
+        return 1;
+      }
       for(let i = data.length-1;i>=0;i--){
         if(moment(data[i].dateVisited).unix()>date){
           return i;
