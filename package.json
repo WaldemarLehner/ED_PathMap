@@ -1,0 +1,24 @@
+{
+  "name": "ed_pathmap",
+  "version": "1.0.0",
+  "description": "ED Pathmap is a webtool that displays data from [EDSM](https://www.edsm.net/), a 3rd party tool which aggregates player data from the game \"[Elite Dangerous](https://www.elitedangerous.com/)\". This tool gathers travel data from EDSM for a certain player and displays it on the Milky Way, the game world.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "echo \"Error: no build specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WaldemarLehner/ED_PathMap.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/WaldemarLehner/ED_PathMap/issues"
+  },
+  "homepage": "https://github.com/WaldemarLehner/ED_PathMap#readme",
+  "dependencies": {
+    "three": "^0.104.0",
+    "tinyify": "^2.5.0"
+  }
+}
