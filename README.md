@@ -5,6 +5,7 @@ ED Pathmap is a webtool that displays data from [EDSM](https://www.edsm.net/), a
 #### [Here's a  demo!](https://waldemarlehner.github.io/ED_PathMap/)
 
 ![ED Pathmap Screenshot](https://i.imgur.com/tFbZOA7.png)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FWaldemarLehner%2FED_PathMap.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2FWaldemarLehner%2FED_PathMap?ref=badge_shield)
 
 #### Used tools & libraries
 - [Three.js](https://threejs.org/) 
@@ -17,3 +18,6 @@ ED Pathmap is a webtool that displays data from [EDSM](https://www.edsm.net/), a
 #### License
 CC-BY-SA
 ![](https://i.creativecommons.org/l/by-sa/4.0/88x31.png)
+
+
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FWaldemarLehner%2FED_PathMap.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FWaldemarLehner%2FED_PathMap?ref=badge_large)
