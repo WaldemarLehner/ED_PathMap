@@ -427,16 +427,16 @@ THREE.EDControls = function(camera,scene) {
 		//#region MOUSE FUNCTIONALITY
 		//#region [Mouse] Zoom
 		if(_mouse.zoom.toDo !== 0){
-		_mouse.needsUpdate = true;
-		_distanceToTarget += _mouse.zoom.toDo;
-		//Clamp
-		if(_distanceToTarget > _this.maxDistance){
-			_distanceToTarget = _this.maxDistance;
-		}else if(_distanceToTarget < _this.minDistance){
-			_distanceToTarget = _this.minDistance;
+			_mouse.needsUpdate = true;
+			_distanceToTarget += _mouse.zoom.toDo;
+			//Clamp
+			if(_distanceToTarget > _this.maxDistance){
+				_distanceToTarget = _this.maxDistance;
+			}else if(_distanceToTarget < _this.minDistance){
+				_distanceToTarget = _this.minDistance;
+			}
+			_mouse.zoom.toDo = 0;
 		}
-		_mouse.zoom.toDo = 0;
-	}
 		//#endregion
 		// Rest of mouse calculations are made inside the event listeners
 		//#endregion
@@ -613,18 +613,18 @@ THREE.EDControls = function(camera,scene) {
 					_dPosition_multiplier = _dPosition_maxSpeed;
 				}
 			}else if(_dPosition_multiplier > _dPosition_maxSpeed){
-					_dPosition_multiplier -= dMultiplication;
-					if(_dPosition_multiplier < 0){
-						_dPosition_multiplier = 0;
-					}
+				_dPosition_multiplier -= dMultiplication;
+				if(_dPosition_multiplier < 0){
+					_dPosition_multiplier = 0;
+				}
 			}
 
 			vector = normalized.multiplyScalar(_dPosition_multiplier*v);
 		} else {
 			_dPosition_multiplier -= dMultiplication_braking;
-				if(_dPosition_multiplier < 0){
-					_dPosition_multiplier = 0;
-				}
+			if(_dPosition_multiplier < 0){
+				_dPosition_multiplier = 0;
+			}
 
 			vector.normalize().multiplyScalar(_dPosition_multiplier*v);
 		}
@@ -702,7 +702,7 @@ THREE.EDControls = function(camera,scene) {
 			}
 			_camera.position.set(_target.x+_cameraLookAtAxis.x*_distanceToTarget*-1, _target.y+_cameraLookAtAxis.y*_distanceToTarget*-1, _target.z+_cameraLookAtAxis.z*_distanceToTarget*-1);
 
-	//		console.log(Math.atan2(_cameraLookAtAxis.x,_cameraLookAtAxis.z)+Math.PI,_camera.rotation.y);
+			//		console.log(Math.atan2(_cameraLookAtAxis.x,_cameraLookAtAxis.z)+Math.PI,_camera.rotation.y);
 
 		}else if(cameraTransition.isInTransition){
 			let x = (deltaTime/cameraTransition.timeToAnimate) + cameraTransition.currentAnimationTimeValue;
