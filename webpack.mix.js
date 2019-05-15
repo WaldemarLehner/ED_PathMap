@@ -12,9 +12,10 @@ let mix = require("laravel-mix");
  |
  */
 
-mix.js("src/prepareData/main.js", "dist/webworker/").minify();
-mix.js("src/main.js", "dist/main/").extract().minify();
-mix.sass("src/sass/main.sass", "dist/src/style.css").minify();
+mix.js("src/prepareData/main.js", "dist/webworker/");
+//mix.js("src/main.js", "dist/main/").extract()
+mix.extract();
+mix.sass("src/sass/main.sass", "dist/src/style.css");
 mix.sourceMaps();
 
 // Full API

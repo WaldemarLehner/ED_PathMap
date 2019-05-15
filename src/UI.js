@@ -28,6 +28,10 @@ function  updateBigText(stringOrUndefined) {
 /** 
  * Updates the Name, Index and Date of a Log Entry to be seen in the UI.
  */
+//TODO!!! Uncomment when the time is right ;)
+function update(){}
+/*
+
 function update () {
 	const canvasInterface = require("./canvasInterface");
 	let count = canvasInterface.getFocusIndex();
@@ -36,7 +40,7 @@ function update () {
 	jQuery("#nav_sysdate").text(data.date);
 	jQuery("#nav_systemid").text(count.toString()+" / "+(canvasInterface.getLogList().length-1).toString());
 }
-
+*/
 
 /**
  *
