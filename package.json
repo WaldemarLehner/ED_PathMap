@@ -1,39 +1,47 @@
 {
-  "name": "ed_pathmap",
-  "version": "1.0.0",
-  "description": "ED Pathmap is a webtool that displays data from [EDSM](https://www.edsm.net/), a 3rd party tool which aggregates player data from the game \"[Elite Dangerous](https://www.elitedangerous.com/)\". This tool gathers travel data from EDSM for a certain player and displays it on the Milky Way, the game world.",
-  "private": true,
-  "scripts": {
-    "test": "mocha",
-    "build": "webpack"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/WaldemarLehner/ED_PathMap.git"
-  },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/WaldemarLehner/ED_PathMap/issues"
-  },
-  "homepage": "https://github.com/WaldemarLehner/ED_PathMap#readme",
-  "dependencies": {
-    "chroma-js": "^2.0.3",
-    "daterangepicker": "^3.0.5",
-    "jquery": "^3.4.1",
-    "moment": "^2.24.0",
-    "rainbowvis.js": "^1.0.1",
-    "rewire": "^4.0.1",
-    "sinon": "^7.3.2",
-    "three": "^0.104.0",
-    "tinyify": "^2.5.0"
-  },
-  "devDependencies": {
-    "chai": "^4.2.0",
-    "eslint": "^5.16.0",
-    "eslint-config-strongloop": "^2.1.0",
-    "mocha": "^6.1.4",
-    "webpack": "^4.31.0",
-    "webpack-cli": "^3.3.2"
-  }
+	"name": "ed_pathmap",
+	"version": "1.0.0",
+	"description": "ED Pathmap is a webtool that displays data from [EDSM](https://www.edsm.net/), a 3rd party tool which aggregates player data from the game \"[Elite Dangerous](https://www.elitedangerous.com/)\". This tool gathers travel data from EDSM for a certain player and displays it on the Milky Way, the game world.",
+	"private": true,
+	"scripts": {
+		"test": "mocha",
+		
+		"dev": "npm run development",
+		"development": "cross-env NODE_ENV=development node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
+		"watch": "npm run development -- --watch",
+		"hot": "cross-env NODE_ENV=development node_modules/webpack-dev-server/bin/webpack-dev-server.js --inline --hot --config=node_modules/laravel-mix/setup/webpack.config.js",
+		"prod": "npm run production",
+		"production": "cross-env NODE_ENV=production node_modules/webpack/bin/webpack.js --no-progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js"
+				
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/WaldemarLehner/ED_PathMap.git"
+	},
+	"author": "",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/WaldemarLehner/ED_PathMap/issues"
+	},
+	"homepage": "https://github.com/WaldemarLehner/ED_PathMap#readme",
+	"dependencies": {
+		"chroma-js": "^2.0.3",
+		"daterangepicker": "^3.0.5",
+		"jquery": "^3.4.1",
+		"moment": "^2.24.0",
+		"rainbowvis.js": "^1.0.1",
+		"rewire": "^4.0.1",
+		"sinon": "^7.3.2",
+		"three": "^0.104.0",
+		"tinyify": "^2.5.0"
+	},
+	"devDependencies": {
+		"chai": "^4.2.0",
+		"eslint": "^5.16.0",
+		"eslint-config-strongloop": "^2.1.0",
+		"laravel-mix": "^4.0.15",
+		"mocha": "^6.1.4",
+		"webpack": "^4.31.0",
+		"webpack-cli": "^3.3.2"
+	}
 }
