@@ -13,9 +13,7 @@ function systemMap(json){
 		if(typeof system !== "undefined"){
 			//Element exists
 			system.count++;
-			if(max < system.count){
-				max = system.count;
-			}
+			max = overrideIfGreater(system.count);
 		}else{
 			//Create new element
 			system = createNewSystem(element);
@@ -47,17 +45,15 @@ function connectionMap(json){
 	let connectionMap = {};
 	let maxVisits = 1;
 	for(let iterator = 0;iterator < json.length-1;iterator++){
-		let sys1 = json[iterator];
-		let sys2 = json[iterator+1];
-		let name = getConnectionName(sys1,sys2);
+		let sys = [json[iterator], json[iterator + 1]];
+		
+		let name = getConnectionName(sys[1],sys[2],connectionMap);
 		let connection = connectionMap[name];
 		if(typeof connection === "undefined"){
-			createNewConnection(sys1,sys2);
+			createNewConnection(sys[1],sys[2]);
 		}else{
 			connection.count++;
-			if (maxVisits < connection.count){
-				maxVisits = connection.count;
-			}
+			maxVisits = overrideIfGreater(connection.count,maxVisits);
 		}
 	}
 	return {map: connectionMap,max: maxVisits};
@@ -71,6 +67,18 @@ function createNewConnection(sys1,sys2,connectionMap){
 	};
 
 }
+
+function overrideIfGreater(value,greaterThanThis){
+	return (value > greaterThanThis) ? value : greaterThanThis;
+}
+
+
+
+
+
+
+
+
 /**
  *
  *

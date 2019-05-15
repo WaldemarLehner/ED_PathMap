@@ -1,22 +1,29 @@
+//This file will probably be executed by a webworker in the background.
+
+
 const jQuery = require("jquery");
 const date = require("./dateOperations");
-
 const __DATA__ = require("../configuration/__DATASOURCE__");
 const UI = require("../UI");
 let getURLForLogs = () => {
 	return (typeof __DATA__.api.logs === "undefined") ? __DATA__.default+"src/data/logs.json" : __DATA__.api.logs;
 };
+//dont crash in tests
+if(typeof window !== "undefined"){
+	jQuery(() => {
+		jQuery.ajax({
+			url: getURLForLogs(),
+			error: () => { throw "Failed to get the Travel History from EDSM. Please submit an Issue on Github"; },
+			success: data => {
+				UI.updateBigText();
+				UI.updateSmallText("Processing travel history");
+				filterData(data);
+			}
+		});
+	});
+}
 
 
-jQuery.ajax({
-	url: getURLForLogs(),
-	error: () => {throw "Failed to get the Travel History from EDSM. Please submit an Issue on Github";},
-	success: data => {
-		UI.updateBigText();
-		UI.updateSmallText("Processing travel history");
-		filterData(data);
-	}
-});
 
 
 /**
@@ -26,7 +33,7 @@ jQuery.ajax({
  */
 function filterData(jsonData){
 	const generate = require("./generateF");
-	
+	if(!validateJSON(jsonData)){throw new Error("Passed Logs have an unexpected structure.");}
 	let indices = date.getIndexDateBounds(jsonData,date.getDateLimits());
 	jsonData = removeDatesOutOfBounds(jsonData,indices);
 	
@@ -62,4 +69,70 @@ function filterData(jsonData){
  */
 function removeDatesOutOfBounds(array,indices){
 	return array.slice(indices[0],indices[1]);
+}
+
+
+function validateJSON(json){
+	if(typeof json === "undefined"){
+		throw new TypeError("No argument has been passed. This method needs the logs as object to be passed.");
+	}
+	if(typeof json !== "object"){
+		throw new TypeError("Passed argument needs to be typeof object. An object that represents an entry from the logs.");
+	}
+	if(isObjEmpty(json)){
+		throw new TypeError("An empty object has been passed");
+	}
+	let isValid = true;
+	json.forEach(element => {
+		if(!isElementValid(element)){
+			isValid = false;
+		}
+	});
+	return isValid;
+}
+
+
+function isElementValid(json){
+	if(typeof json === "undefined"){
+		throw new TypeError("No argument has been passed. This method needs an entry from the logs as object to be passed.");
+	}else if(typeof json !== "object"){
+		throw new TypeError("Passed argument needs to be typeof object. An object that represents an entry from the logs.");
+	}
+	let retval = true;
+	if(!isNum(json.x) || !isNum(json.y) || !isNum(json.z)) {
+		retval = false;
+	}
+	if(typeof json.name !== "string"){
+		retval = false;
+	}
+	if(typeof json.dateVisited !== "string"){
+		retval = false;
+	} else if (!isTimeInRightFormat(json.dateVisited)){
+		retval = false;
+	}
+	return retval;
+}
+/**
+
+ * @param {string} time
+ */
+function isTimeInRightFormat(time){
+	if(typeof time !== "string"){
+		return false;
+	}
+	//from https://gist.github.com/x-strong/5378739
+	let regexp = /^(?:(?!0000)[0-9]{4}-(?:(?:0[1-9]|1[0-2])-(?:0[1-9]|1[0-9]|2[0-8])|(?:0[13-9]|1[0-2])-(?:29|30)|(?:0[13578]|1[02])-31)|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)-02-29)\s([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/;
+	return regexp.test(time);
+}
+
+function isNum(num){
+	return typeof num === "number" && !isNaN(num);
+}
+
+function isObjEmpty(obj) {
+	for (var key in obj) {
+		if (obj.hasOwnProperty(key))
+			return false;
+	}
+	return true;
 }

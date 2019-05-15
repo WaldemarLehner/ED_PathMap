@@ -23,6 +23,8 @@
     "jquery": "^3.4.1",
     "moment": "^2.24.0",
     "rainbowvis.js": "^1.0.1",
+    "rewire": "^4.0.1",
+    "sinon": "^7.3.2",
     "three": "^0.104.0",
     "tinyify": "^2.5.0"
   },

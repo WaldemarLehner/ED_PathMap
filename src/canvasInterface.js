@@ -15,44 +15,43 @@ var EDControls = require("./EDControls");
  * @param {object} initArguments.sysList Container with all necessary systems
  */
 let validateInput = (initArguments) => {
+	const validate = require("./validate");
 	/**
 	 * Collects all the errors that happen when passing the arguments.
 	 */
 	let errorList = [];
-	
+	/*
 	if(!(initArguments.camera instanceof THREE.Camera)){
-		createError(initArguments.camera,"camera needs to be typeof THREE.Camera.");
+	}*/
+	if(!validate.one(initArguments.camera,THREE.Camera,true,true)){
+		createError(initArguments.camera, "camera needs to be typeof THREE.Camera.", errorList);
 	}
 
-
-	if(!(Array.isArray(initArguments.scenes))){
-		createError(initArguments.scenes,"scenes needs to be an Array.");
+	if(Array.isArray(initArguments.scenes)){
+		if (initArguments.scenes.length === 0) {
+			createError(initArguments.scenes, "scenes Array needs to be longer than one.", errorList);
+		}
+		else if (!validate.multiple(initArguments.scenes, Array(initArguments.scenes.length).fill(THREE.Scene), Array(initArguments.scenes.length).fill(true), Array(initArguments.scenes.length).fill(true))){
+			createError(initArguments.scenes, "scenes are not all typeof THREE.Scene", errorList);
+		}
 	}else{
-		if(initArguments.scenes.length === 0){
-			createError(initArguments.scenes,"scenes Array needs to be longer than one.");
-		}
-		else{
-			initArguments.scenes.forEach((val,index) => {
-				if(!(val instanceof THREE.Scene)){
-					createError(initArguments.scenes,"The value of scenes["+index+"] needs to be typeof THREE.Scene");
-				}
-			});
-		}
+		createError(initArguments.scenes, "scenes needs to be an Array.", errorList);
 	}
 
 
-	if(!(initArguments.controls instanceof EDControls)){
-		createError(initArguments.controls,"controls needs to be typeof EDControls");
+	if(!validate.one(initArguments.controls,EDControls,true,true)){
+		createError(initArguments.controls, "controls needs to be typeof EDControls", errorList);
 	}
 
 
-	//TODO!! Create Checks for linesref, pointsref, logList, sysList
+	//TODO!! Create Checks for linesref, pointsref, logList, sysList ALSO... CAN I CHANGE THE STRUCTURE?
 
 
-	function createError(object,errmsg){
-		errorList.push([object,errmsg]);
-	}
+
 };
+function createError(object, errmsg,errorList) {
+	errorList.push([object, errmsg]);
+}
 
 
 /**

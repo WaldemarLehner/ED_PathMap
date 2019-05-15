@@ -14,27 +14,23 @@ module.exports = {
  * @returns if object is of given type. Only returns false if supressThrow is true
  */
 function validateInput(object,reqType,useInstanceOfInsteadofTypeof,supressThrow){
-	let status;
-	if(useInstanceOfInsteadofTypeof){
-		status = object instanceof reqType;
-	}else{
-		status = typeof object === reqType;
-	}
+	let status = (useInstanceOfInsteadofTypeof) ? (object instanceof reqType) : (typeof object === reqType);
 	if(status){
 		return true;
 	}else{
-		let err = {
-			msg:"Given value is not "+(useInstanceOfInsteadofTypeof) ? "instance":"type"+" of "+reqType,
-			obj:object
-		};
-		if(supressThrow){
-			console.error(err);
-			return false;
-		}else{
-			throw err;
-		}
+		let err = generateError(object,reqType,useInstanceOfInsteadofTypeof);
+		return returnResult([err],supressThrow);
 	}
 }
+
+function generateError(object,reqType,useInstanceOfInsteadofTypeof){
+	return {
+		msg: "Given value is not " + (useInstanceOfInsteadofTypeof) ? "instance" : "type" + " of " + reqType,
+		obj: object	
+	};
+}
+
+
 /**
  *
  *
@@ -46,14 +42,7 @@ function validateInput(object,reqType,useInstanceOfInsteadofTypeof,supressThrow)
  */
 function validateInputs(objectArr,reqType,useInstanceOfInsteadofTypeof,supressThrow){
 	let errors = [];
-	if(!(Array.isArray(objectArr)&&Array.isArray(reqType)&&Array.isArray(useInstanceOfInsteadofTypeof))){
-		throw "CRITICAL ERROR: FIRST THREE ARGS NEED TO BE ARRAYS!";
-	}
-	if(!(objectArr.length === reqType.length === useInstanceOfInsteadofTypeof.length)){
-		throw "CRITICAL ERROR: GIVEN ARRAYS TO validateInput VARY IN LENGTH"
-	}
-	
-
+	throwInternalErrors([objectArr,reqType,useInstanceOfInsteadofTypeof]);
 	for(let iterator = 0;iterator<objectArr.length;iterator++){
 		let status = validateInput(
 			objectArr[iterator],
@@ -61,22 +50,55 @@ function validateInputs(objectArr,reqType,useInstanceOfInsteadofTypeof,supressTh
 			useInstanceOfInsteadofTypeof[iterator],
 			true);
 		if(!status){
-			errors.push({
-				msg:"Given value is not "+(useInstanceOfInsteadofTypeof[iterator]) ? "instance":"type"+" of "+reqType[iterator],
-				obj:objectArr[iterator]
-			});
+			errors.push(generateError(objectArr[iterator],reqType,useInstanceOfInsteadofTypeof));
 		}
 	}
+	return returnResult(errors,supressThrow);
+}
 
-	if(errors.length !== 0){
-		if(!supressThrow){
-			throw errors;
+function areAllArrays(arrOfArrays){
+	let allArrays = true;
+	for(let i = 0;i<arrOfArrays.length;i++){
+		if(!Array.isArray(arrOfArrays[i])){
+			allArrays = false;
+			break;
 		}
-		else{
+	}
+	return allArrays;
+}
+
+function areAllArraysOfEqualLen(arrOfArrays){
+	let sameLen = true;
+	let len = arrOfArrays[0];
+	for(let i = 1;i<arrOfArrays.length;i++){
+		if(len !== arrOfArrays[i].length){
+			sameLen = false;
+			break;
+		}
+	}
+	return sameLen;
+	
+}
+
+function throwInternalErrors(arrays){
+	if (!areAllArrays(arrays)) {
+		throw "CRITICAL ERROR: FIRST THREE ARGS NEED TO BE ARRAYS!";
+	}
+	if (!areAllArraysOfEqualLen(arrays)) {
+		throw "CRITICAL ERROR: GIVEN ARRAYS TO validateInput VARY IN LENGTH";
+	}
+}
+
+function returnResult(errors,supressThrow){
+	if (errors.length === 0) {
+		return true;
+	} else {
+		if (supressThrow) {
 			console.error(errors);
 			return false;
 		}
-	}else{
-		return true;
+		else {
+			throw errors;
+		}
 	}
 }
