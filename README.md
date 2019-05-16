@@ -1,4 +1,7 @@
 # ED Pathmap
+
+## This tool is currently getting rewritten to use js code exported from a Node environment to better maintainability and to easily integrate unit tests.
+
 ### What is ED Pathmap?
 ED Pathmap is a webtool that displays data from [EDSM](https://www.edsm.net/), a 3rd party tool which aggregates player data from the game "[Elite Dangerous](https://www.elitedangerous.com/)". This tool gathers travel data from EDSM for a certain player and displays it on the Milky Way, the game world. 
 
