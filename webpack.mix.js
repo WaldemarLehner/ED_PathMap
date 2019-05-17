@@ -13,10 +13,10 @@ let mix = require("laravel-mix");
  */
 mix.copy("src/websrc", "dist/src");
 mix.copy("src/index.html", "dist/index.html");
-mix.js("src/webworkers/prepareData/main.js", "dist/webworker/prepareData.js");
-mix.js("src/index.js", "dist/index.js");
+mix.js("src/webworkers/prepareData/main.js", "dist/webworkers/prepareData.worker.js");
 mix.extract();
 mix.sass("src/sass/main.sass", "dist/src/style.css");
+mix.js("src/index.js", "dist/index.js");
 mix.sourceMaps();
 
 
@@ -40,10 +40,10 @@ mix.sourceMaps();
 // mix.sourceMaps(); // Enable sourcemaps
 // mix.version(); // Enable versioning.
 // mix.disableNotifications();
-// mix.setPublicPath('path/to/public');
-// mix.setResourceRoot('prefix/for/resource/locators');
+mix.setPublicPath("dist/");
+mix.setResourceRoot("src/");
 // mix.autoload({}); <-- Will be passed to Webpack's ProvidePlugin.
-// mix.webpackConfig({}); <-- Override webpack.config.js, without editing the file directly.
+// mix.webpackConfig();// <-- Override webpack.config.js, without editing the file directly.
 // mix.babelConfig({}); <-- Merge extra Babel configuration (plugins, etc.) with Mix's default.
 // mix.then(function () {}) <-- Will be triggered each time Webpack finishes building.
 // mix.dump(); <-- Dump the generated webpack config object t the console.

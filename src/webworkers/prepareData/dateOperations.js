@@ -11,8 +11,8 @@ module.exports = {
 /**
  * @exports [number,number]
  */
-function getDateLimits(){
-	let url = getURL();
+function getDateLimits(url){
+	
 	validateURL(url);
 	url = url.split("?",2);
 	if(url.length === 1){
@@ -37,10 +37,16 @@ function getDateLimits(){
 
 }
 function addDateLimitsToSettingsUI(dates){
+	/*
 	jQuery("#check_limit_selection > input").prop("checked", true);
 	jQuery("#daterange").removeClass("hidden");
 	let daterange_txt = (moment(dates[0]).format("YYYY-MM-DD")) + " - "(moment(dates[0]).format("YYYY-MM-DD"));
 	jQuery("#daterange").val(daterange_txt);
+	*/
+	self.postMessage([{
+		cmd:"UI",
+		params:dates
+	}]);
 }
 
 
@@ -83,6 +89,3 @@ function addToBounds(i,bounds,time,limits){
 	return bounds;
 }
 
-function getURL(){
-	return window.location.href;
-}

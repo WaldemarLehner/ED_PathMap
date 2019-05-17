@@ -3,10 +3,17 @@
 
 
 const date = require("./dateOperations");
-const __DATA__ = require("../../configuration/__DATASOURCE__");
-const UI = require("../../UI");
 
 
+self.addEventListener("message",function(msg){
+	let retData = filterData(msg.data.json, msg.data.url);
+	let retObj = {
+		cmd: "setPreparedData",
+		params: retData
+	};
+	self.postMessage([retObj]);	
+	close();
+});
 
 
 
@@ -15,10 +22,10 @@ const UI = require("../../UI");
  *
  * @param {Array} jsonData An Array that represents the players entire travel log. 
  */
-function filterData(jsonData){
+function filterData(jsonData,url){
 	const generate = require("./generateF");
 	if(!validateJSON(jsonData)){throw new Error("Passed Logs have an unexpected structure.");}
-	let indices = date.getIndexDateBounds(jsonData,date.getDateLimits());
+	let indices = date.getIndexDateBounds(jsonData,date.getDateLimits(url));
 	jsonData = removeDatesOutOfBounds(jsonData,indices);
 	
 	//An Object holdings all Systems with coords, name and amount of visits
@@ -40,7 +47,6 @@ function filterData(jsonData){
 		},
 		drawInstructions: drawInstructions
 	};
-	console.log(data);
 	return data;
 }
 

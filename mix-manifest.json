@@ -5,8 +5,8 @@
     "/dist/vendor.js.map": "/dist/vendor.js.map",
     "/dist/index.js": "/dist/index.js",
     "/dist/index.js.map": "/dist/index.js.map",
-    "/dist/webworker/prepareData.js": "/dist/webworker/prepareData.js",
+    "/dist/webworkers/prepareData.worker.js": "/dist/webworkers/prepareData.worker.js",
     "/dist/src/style.css": "/dist/src/style.css",
-    "/dist/webworker/prepareData.js.map": "/dist/webworker/prepareData.js.map",
+    "/dist/webworkers/prepareData.worker.js.map": "/dist/webworkers/prepareData.worker.js.map",
     "/dist/index.html": "/dist/index.html"
 }

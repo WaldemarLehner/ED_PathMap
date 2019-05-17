@@ -1,1 +1,66 @@
-.topProgressBar{position:fixed;pointer-events:none;height:5px;width:100%;top:0;z-index:99}.topProgressBar #loadingProgressIndicator{position:relative;height:100%;width:0;background-color:#0a88f0}.loadingScreen{position:fixed;margin:0;top:0;background-color:#212121;z-index:13;width:100%;height:100%;display:table}.loadingScreen .valign{display:table-cell;vertical-align:middle}.loadingScreen .valign div{margin:auto;width:600px;text-align:center}.loadingScreen .valign div p{text-transform:uppercase;text-align:center;padding:50px 0;font-weight:400;font-family:Rubik,sans-serif}.loadingScreen .valign div p#loaderTextBig{color:#e0e0e0;font-size:30px}.loadingScreen .valign div p#loaderTextSmall{color:#b9b9b9;font-size:20px}.loadingScreen .valign div img{height:100px;width:100px;margin:0}body{margin:0}
+.topProgressBar {
+  position: fixed;
+  pointer-events: none;
+  height: 5px;
+  width: 100%;
+  top: 0;
+  z-index: 99;
+}
+
+.topProgressBar #loadingProgressIndicator {
+  position: relative;
+  height: 100%;
+  width: 0%;
+  background-color: #0a88f0;
+}
+
+.loadingScreen {
+  position: fixed;
+  margin: 0;
+  top: 0;
+  background-color: #212121;
+  z-index: 13;
+  width: 100%;
+  height: 100%;
+  display: table;
+}
+
+.loadingScreen .valign {
+  display: table-cell;
+  vertical-align: middle;
+}
+
+.loadingScreen .valign div {
+  margin: auto;
+  width: 600px;
+  text-align: center;
+}
+
+.loadingScreen .valign div p {
+  text-transform: uppercase;
+  text-align: center;
+  padding: 50px 0;
+  font-weight: 400;
+  font-family: "Rubik", sans-serif;
+}
+
+.loadingScreen .valign div p#loaderTextBig {
+  color: #e0e0e0;
+  font-size: 30px;
+}
+
+.loadingScreen .valign div p#loaderTextSmall {
+  color: #b9b9b9;
+  font-size: 20px;
+}
+
+.loadingScreen .valign div img {
+  height: 100px;
+  width: 100px;
+  margin: 0;
+}
+
+body {
+  margin: 0;
+}
+

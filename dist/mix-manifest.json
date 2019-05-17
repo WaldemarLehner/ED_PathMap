@@ -1,0 +1,8 @@
+{
+    "/index.js": "/index.js",
+    "/manifest.js": "/manifest.js",
+    "/vendor.js": "/vendor.js",
+    "/webworkers/prepareData.worker.js": "/webworkers/prepareData.worker.js",
+    "/src/style.css": "/src/style.css",
+    "/index.html": "/index.html"
+}
