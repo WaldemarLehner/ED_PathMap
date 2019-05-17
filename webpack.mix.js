@@ -11,12 +11,14 @@ let mix = require("laravel-mix");
  | file for your application, as well as bundling up your JS files.
  |
  */
-
-mix.js("src/prepareData/main.js", "dist/webworker/");
-//mix.js("src/main.js", "dist/main/").extract()
+mix.copy("src/websrc", "dist/src");
+mix.copy("src/index.html", "dist/index.html");
+mix.js("src/webworkers/prepareData/main.js", "dist/webworker/prepareData.js");
+mix.js("src/index.js", "dist/index.js");
 mix.extract();
 mix.sass("src/sass/main.sass", "dist/src/style.css");
 mix.sourceMaps();
+
 
 // Full API
 // mix.js(src, output);

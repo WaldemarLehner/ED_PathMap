@@ -1,6 +1,12 @@
 {
-    "/dist/webworker/main.js": "/dist/webworker/main.js",
+    "/dist/manifest.js": "/dist/manifest.js",
+    "/dist/manifest.js.map": "/dist/manifest.js.map",
+    "/dist/vendor.js": "/dist/vendor.js",
+    "/dist/vendor.js.map": "/dist/vendor.js.map",
+    "/dist/index.js": "/dist/index.js",
+    "/dist/index.js.map": "/dist/index.js.map",
+    "/dist/webworker/prepareData.js": "/dist/webworker/prepareData.js",
     "/dist/src/style.css": "/dist/src/style.css",
-    "/dist/webworker/manifest.js": "/dist/webworker/manifest.js",
-    "/dist/webworker/vendor.js": "/dist/webworker/vendor.js"
+    "/dist/webworker/prepareData.js.map": "/dist/webworker/prepareData.js.map",
+    "/dist/index.html": "/dist/index.html"
 }

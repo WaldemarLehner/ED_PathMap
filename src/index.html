@@ -1,0 +1,58 @@
+<!doctype html>
+<!-- EDPathMap Application. 
+	Written by WaldemarLehner for the EDSM project.
+	You can get the source code here and build it yourself:
+	https://github.com/WaldemarLehner/ED_PathMap/
+	If you find a bug or feel that something is off, feel free to open a bug 
+	report on https://github.com/WaldemarLehner/ED_PathMap/issues.
+-->
+<html>
+	<head>
+		<title>EDSM 3D Map</title>
+		<link rel="stylesheet" href="src/style.css"/>
+		<link href="https://fonts.googleapis.com/css?family=Rubik:400,500" rel="stylesheet">
+		<script type="text/javascript" src="manifest.js"></script>
+		<script type="text/javascript" src="vendor.js"></script>
+		<script  type="text/javascript" src="index.js"></script>
+
+	</head>
+	<body>
+		<div class="topProgressBar"><div id="loadingProgressIndicator"></div></div>
+		<!-- @Loading Screen -->
+		<div class="loadingScreen active">
+			<div class="valign">
+				<div>
+					<p id="loaderTextBig">This is the big text</p>
+					<img src="src/img/loader.gif" >
+					<p id="loaderTextSmall">This is the small text</p>
+				</div>
+			</div>
+		</div>
+		<nav>
+			<div class="navLeft">
+				<p class="navSysInfo">
+					<span class="sysName"></span>
+					<span class="sysDate"></span>
+				</p>
+			</div>
+			<div class="navRight">
+				<a href="https://www.edsm.net"><span class="icon-edsm"></span></a>
+				<a class="action-settings"><span class="icon-settings"></span></a>
+				<a class="action-select-last"><span class="icon-last"></span></a>
+				<a class="action-select-front3"><span class="icon-front3"></span></a>
+				<a class="action-select-front2"><span class="icon-front2"></span></a>
+				<a class="action-select-front1"><span class="icon-front1"></span></a>
+				<p id="nav_systemid"></p>
+				<a class="action-select-back1"><span class="icon-back1"></span></a>
+				<a class="action-select-back2"><span class="icon-back2"></span></a>
+				<a class="action-select-back3"><span class="icon-back3"></span></a>
+				<a class="action-select-first"><span class="icon-first"></span></a>
+			</div>
+		</nav>
+		
+		<div class="canvas">
+			
+		</div>
+
+	</body>
+</html>
