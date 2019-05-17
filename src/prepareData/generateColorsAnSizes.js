@@ -6,8 +6,8 @@ module.exports = {generateColor:generateColor,generatePointSize:generatePointSiz
 function generateColor(value,isPoint,maxVisits){
 	let minmax = [];
 	let def = (isPoint) ? definitions.systems.color : definitions.connections.color;
-	minmax[0] = (def.useMaxValueFromLogsInstead) ? maxVisits : def.maxVal;
-	minmax[1] = def.maxVal;
+	minmax[1] = (def.useMaxValueFromLogsInstead) ? maxVisits : def.maxVal;
+	minmax[0] = def.minVal;
 	let color = chroma.scale(def.colorGradient).mode("lab").domain(minmax[0],minmax[1]);
 	return color(value).num();
 }
@@ -41,7 +41,7 @@ function getSizeMapperSize(value){
 	}
 	//Extremas
 	if(!brokeOut){
-		return sizeDef[index][1];
+		return sizeDef[sizeDef.length-1][1];
 	}
 	if(index === 0){
 		return sizeDef[0][1];

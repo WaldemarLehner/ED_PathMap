@@ -1,5 +1,5 @@
-/*$colorMap:(
-	backgroundSolid:#292c2e
+$colorMap:(
+	backgroundSolid:	#212121,
 	navBarBackground: (
 		active: 		#596063,
 		inactive: 		#3b4042
@@ -10,5 +10,10 @@
 			systemName: #c3c3c3,
 			date:		#8e8e8e
 		)	
+	),
+	loadingTop: #0a88f0,
+	loadingTexts: (
+		big:			#e0e0e0,
+		small:			#b9b9b9
 	)
-);*/
+)

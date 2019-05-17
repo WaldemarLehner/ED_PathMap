@@ -9,11 +9,11 @@ function systemMap(json){
 	let max = 1;
 	for(let index = 0;index < json.length;index++){
 		let element = json[index];
-		let system = {};
+		let system = systems[json[index].name];
 		if(typeof system !== "undefined"){
 			//Element exists
 			system.count++;
-			max = overrideIfGreater(system.count);
+			max = overrideIfGreater(system.count,max);
 		}else{
 			//Create new element
 			system = createNewSystem(element);
@@ -44,14 +44,16 @@ function createNewSystem(el){
 function connectionMap(json){
 	let connectionMap = {};
 	let maxVisits = 1;
-	for(let iterator = 0;iterator < json.length-1;iterator++){
-		let sys = [json[iterator], json[iterator + 1]];
+	for(let iterator = 0;iterator < json.length-2;iterator++){
 		
-		let name = getConnectionName(sys[1],sys[2],connectionMap);
+		let sys = [json[iterator], json[iterator + 1]];
+		let name = getConnectionName(sys[0].name,sys[1].name);
 		let connection = connectionMap[name];
+		//System not in list yet.
 		if(typeof connection === "undefined"){
-			createNewConnection(sys[1],sys[2]);
+			createNewConnection(sys[0],sys[1],connectionMap);
 		}else{
+		//System in list already.
 			connection.count++;
 			maxVisits = overrideIfGreater(connection.count,maxVisits);
 		}
@@ -100,6 +102,7 @@ let generateColorsAndSizes = require("./generateColorsAnSizes");
 
 function drawInstructions(json,points,lines,maxVisits){
 	//An Object w/ 2 Arrays. One for systems, and one for Connections
+
 	let instructions = {};
 	instructions.points = generatePointInstructions(points,maxVisits.systems);
 	instructions.lines = generateLineInstructions(json,lines,points,maxVisits.connections);
@@ -143,12 +146,16 @@ function generateLineInstructions(json,lines,points,maxValues){
 		let thisConnection = lines[getConnectionName(thisObject.name,nextObject.name)];
 		let nextConnection = lines[getConnectionName(nextObject.name,nextnextObject.name)];
 		//The next connection will have the same color → No need to add a vertex inbetween. Only add the first Point of the connection
-		
+		if(isUndef(thisConnection) || isUndef(nextConnection)){
+			//Connection does not exist. Skip
+			continue;
+		}
 		let color = generateColorsAndSizes.generateColor(thisConnection.count,false,maxValues);
-		let position = points[thisConnection.name].coords;
+		let position = points[thisObject.name].coords;
 		retArr.push({color:color,coords:position});
 		if (thisConnection.count !== nextConnection.count){
-			retArr.push({color:color,coords:points[nextConnection.name].coords});
+			let color = generateColorsAndSizes.generateColor(nextConnection.count,false,maxValues);
+			retArr.push({color:color,coords:points[nextObject.name].coords});
 		}
 		if(iterator === json.length-2){
 			//Last loop.
@@ -162,4 +169,8 @@ function generateLineInstructions(json,lines,points,maxValues){
 		
 	}
 	return retArr;
+}
+
+function isUndef(el){
+	return typeof el === "undefined";
 }

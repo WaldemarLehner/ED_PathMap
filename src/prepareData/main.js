@@ -22,7 +22,7 @@ if(typeof window !== "undefined"){
 		});
 	});
 }
-
+console.log("hi hi hello");
 
 
 
@@ -56,6 +56,7 @@ function filterData(jsonData){
 		},
 		drawInstructions: drawInstructions
 	};
+	console.log(data);
 	return data;
 }
 

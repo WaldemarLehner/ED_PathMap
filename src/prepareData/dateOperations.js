@@ -84,5 +84,5 @@ function addToBounds(i,bounds,time,limits){
 }
 
 function getURL(){
-	return window.url;
+	return window.location.href;
 }

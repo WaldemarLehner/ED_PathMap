@@ -10,7 +10,10 @@
 	<head>
 		<title>EDSM 3D Map</title>
 		<link rel="stylesheet" href="src/style.css"/>
-		<script src="main.js"></script>
+		<link href="https://fonts.googleapis.com/css?family=Rubik:400,500" rel="stylesheet">
+		<script src="webworker/manifest.js"></script>
+		<script src="webworker/vendor.js"></script>
+		<script src="webworker/main.js"></script>
 	</head>
 	<body>
 		<div class="topProgressBar"><div id="loadingProgressIndicator"></div></div>
@@ -18,9 +21,9 @@
 		<div class="loadingScreen active">
 			<div class="valign">
 				<div>
-					<p id="loaderTextBig"></p>
+					<p id="loaderTextBig">This is the big text</p>
 					<img src="src/img/loader.gif" >
-					<p id="loaderTextSmall"></p>
+					<p id="loaderTextSmall">This is the small text</p>
 				</div>
 			</div>
 		</div>
@@ -45,6 +48,10 @@
 				<a class="action-select-first"><span class="icon-first"></span></a>
 			</div>
 		</nav>
+		
+		<div class="canvas">
+			
+		</div>
 
 	</body>
 </html>
