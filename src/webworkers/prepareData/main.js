@@ -64,12 +64,7 @@ function removeDatesOutOfBounds(array,indices){
 
 
 function validateJSON(json){
-	if(typeof json === "undefined"){
-		throw new TypeError("No argument has been passed. This method needs the logs as object to be passed.");
-	}
-	if(typeof json !== "object"){
-		throw new TypeError("Passed argument needs to be typeof object. An object that represents an entry from the logs.");
-	}
+	checkIfJSONIsUndefinedOrNoObject(json);
 	if(isObjEmpty(json)){
 		throw new TypeError("An empty object has been passed");
 	}
@@ -82,20 +77,22 @@ function validateJSON(json){
 	return isValid;
 }
 
-
-function isElementValid(json){
-	if(typeof json === "undefined"){
-		throw new TypeError("No argument has been passed. This method needs an entry from the logs as object to be passed.");
-	}else if(typeof json !== "object"){
+function checkIfJSONIsUndefinedOrNoObject(json){
+	if (typeof json === "undefined") {
+		throw new TypeError("No argument has been passed. This method needs the logs as object to be passed.");
+	}
+	if (typeof json !== "object") {
 		throw new TypeError("Passed argument needs to be typeof object. An object that represents an entry from the logs.");
 	}
+}
+
+function isElementValid(json){
+	checkIfJSONIsUndefinedOrNoObject(json);
 	let retval = true;
-	if(!isNum(json.x) || !isNum(json.y) || !isNum(json.z)) {
+	if (!isNum([json.x, json.y, json.z]) || typeof json.name !== "string") {
 		retval = false;
 	}
-	if(typeof json.name !== "string"){
-		retval = false;
-	}
+
 	if(typeof json.dateVisited !== "string"){
 		retval = false;
 	} else if (!isTimeInRightFormat(json.dateVisited)){
@@ -117,6 +114,15 @@ function isTimeInRightFormat(time){
 }
 
 function isNum(num){
+	if(Array.isArray(num)){
+		let areAllNums = true;
+		num.forEach(val=>{
+			if(typeof val !== "number" || isNaN(val)){
+				areAllNums = false;
+			}
+		});
+		return areAllNums;
+	}
 	return typeof num === "number" && !isNaN(num);
 }
 

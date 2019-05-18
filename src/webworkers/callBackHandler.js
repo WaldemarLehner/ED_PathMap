@@ -8,8 +8,9 @@
 */
 
 /* CMD LIST (cmd | params)
-* setPreparedData | data-object
-*
+* setPreparedData | MessageEvent
+* logError | errObj
+* 
 */
 
 module.exports = (MessageEvent) => {
