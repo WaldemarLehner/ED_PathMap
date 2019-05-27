@@ -1,0 +1,2 @@
+(self.webpackJsonp=self.webpackJsonp||[]).push([[3],{138:function(s,o,n){s.exports=n(139)},139:function(s,o,n){var t=n(140)(function(s){s.data.canvas?t.post("canvas found"):t.post("canvas not found"),t.isWorker?t.post("this is a worker"):t.post("this is not a worker"),setInterval(function(){t.post("1s passed")},1e3)})}},[[138,0,1]]]);
+//# sourceMappingURL=canvas.worker.js.map

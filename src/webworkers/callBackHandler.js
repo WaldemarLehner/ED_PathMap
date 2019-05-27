@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 //This module handles the callbacks from 
 
 /*
@@ -45,7 +46,8 @@ function getCommandByString(string){
 	let commands = {
 		setPreparedData : setPreparedData,
 		error: logError,
-		UI: userInterface
+		UI: userInterface,
+		log: log
 	};
 	return commands[string];
 }
@@ -60,4 +62,8 @@ function logError(data){
 
 function userInterface(data){
 	console.log("userInterface has been called with:", data);
+}
+
+function log(data){
+	console.log(data);
 }

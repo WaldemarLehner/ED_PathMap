@@ -14,12 +14,19 @@ let mix = require("laravel-mix");
 mix.copy("src/websrc", "dist/src");
 mix.copy("src/index.html", "dist/index.html");
 mix.js("src/webworkers/prepareData/main.js", "dist/webworkers/prepareData.worker.js");
+mix.js("src/webworkers/canvasInterface/main.js","dist/webworkers/canvas.worker.js");
 mix.extract();
 mix.sass("src/sass/main.sass", "dist/src/style.css");
 mix.js("src/index.js", "dist/index.js");
 mix.sourceMaps();
-
-
+//Replace the global variable "window" with "self".
+//self === window in a window context but in a webworker context
+//window is undefined.
+mix.webpackConfig({
+	output: {
+		globalObject: "self"
+	}
+});
 // Full API
 // mix.js(src, output);
 // mix.react(src, output); <-- Identical to mix.js(), but registers React Babel compilation.

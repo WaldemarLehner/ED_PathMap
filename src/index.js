@@ -15,8 +15,9 @@ jQuery(document).ready(function(){
 				const workerPreperation = require("./webworkers/initWebWorkers");
 				//UI.updateBigText();
 				//UI.updateSmallText("Processing travel history");
-				let prepWorker = workerPreperation.preparationWorker("webworkers/prepareData.js",workerCallbacks,"LogsPreparer");
-				prepWorker.postMessage({json:data,url:window.location.href});
+				//let prepWorker = workerPreperation.preparationWorker("webworkers/prepareData.js",workerCallbacks);
+				//prepWorker.postMessage({json:data,url:window.location.href});
+				let canvasWorker = workerPreperation.canvasWorker("webworkers/canvas.worker.js",workerCallbacks);
 			}
 		});
 	});
