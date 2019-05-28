@@ -15,9 +15,11 @@ jQuery(document).ready(function(){
 				const workerPreperation = require("./webworkers/initWebWorkers");
 				//UI.updateBigText();
 				//UI.updateSmallText("Processing travel history");
-				//let prepWorker = workerPreperation.preparationWorker("webworkers/prepareData.js",workerCallbacks);
-				//prepWorker.postMessage({json:data,url:window.location.href});
+				let prepWorker = workerPreperation.preparationWorker("webworkers/prepareData.js",workerCallbacks);
+				prepWorker.postMessage({json:data,url:window.location.href});
 				let canvasWorker = workerPreperation.canvasWorker("webworkers/canvas.worker.js",workerCallbacks);
+				//Tell the worker to start rendering the skybox, the galmap, and the sectors
+				//canvasWorker.post(["set.skybox.init","TODO, PATH TO SKYBOX FOLDER"],["set.initGalPlane"]);
 			}
 		});
 	});

@@ -15,7 +15,7 @@ mix.copy("src/websrc", "dist/src");
 mix.copy("src/index.html", "dist/index.html");
 mix.js("src/webworkers/prepareData/main.js", "dist/webworkers/prepareData.worker.js");
 mix.js("src/webworkers/canvasInterface/main.js","dist/webworkers/canvas.worker.js");
-mix.extract();
+//mix.extract();
 mix.sass("src/sass/main.sass", "dist/src/style.css");
 mix.js("src/index.js", "dist/index.js");
 mix.sourceMaps();
