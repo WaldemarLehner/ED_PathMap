@@ -1,14 +1,7 @@
 {
-    "/manifest.js": "/manifest.js",
-    "/manifest.js.map": "/manifest.js.map",
-    "/vendor.js": "/vendor.js",
-    "/vendor.js.map": "/vendor.js.map",
+    "/webworkers/manifest.js": "/webworkers/manifest.js",
+    "/webworkers/vendor.js": "/webworkers/vendor.js",
     "/index.js": "/index.js",
-    "/index.js.map": "/index.js.map",
     "/webworkers/canvas.worker.js": "/webworkers/canvas.worker.js",
-    "/webworkers/canvas.worker.js.map": "/webworkers/canvas.worker.js.map",
-    "/webworkers/prepareData.worker.js": "/webworkers/prepareData.worker.js",
-    "/src/style.css": "/src/style.css",
-    "/webworkers/prepareData.worker.js.map": "/webworkers/prepareData.worker.js.map",
     "/index.html": "/index.html"
 }

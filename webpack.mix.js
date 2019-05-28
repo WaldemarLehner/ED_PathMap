@@ -11,14 +11,12 @@ let mix = require("laravel-mix");
  | file for your application, as well as bundling up your JS files.
  |
  */
-mix.copy("src/websrc", "dist/src");
+
 mix.copy("src/index.html", "dist/index.html");
-mix.js("src/webworkers/prepareData/main.js", "dist/webworkers/prepareData.worker.js");
-mix.js("src/webworkers/canvasInterface/main.js","dist/webworkers/canvas.worker.js");
+mix.js("src/index.js", "dist/");
 mix.extract();
-mix.sass("src/sass/main.sass", "dist/src/style.css");
-mix.js("src/index.js", "dist/index.js");
-mix.sourceMaps();
+mix.js("src/webworkers/canvasInterface/main.js","dist/webworkers/canvas.worker.js");
+
 //Replace the global variable "window" with "self".
 //self === window in a window context but in a webworker context
 //window is undefined.

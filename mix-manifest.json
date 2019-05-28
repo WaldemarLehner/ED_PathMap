@@ -1,12 +1,6 @@
 {
-    "/dist/manifest.js": "/dist/manifest.js",
-    "/dist/manifest.js.map": "/dist/manifest.js.map",
-    "/dist/vendor.js": "/dist/vendor.js",
-    "/dist/vendor.js.map": "/dist/vendor.js.map",
     "/dist/index.js": "/dist/index.js",
     "/dist/index.js.map": "/dist/index.js.map",
-    "/dist/webworkers/prepareData.worker.js": "/dist/webworkers/prepareData.worker.js",
-    "/dist/src/style.css": "/dist/src/style.css",
-    "/dist/webworkers/prepareData.worker.js.map": "/dist/webworkers/prepareData.worker.js.map",
-    "/dist/index.html": "/dist/index.html"
+    "/dist/manifest.js": "/dist/manifest.js",
+    "/dist/manifest.js.map": "/dist/manifest.js.map"
 }
