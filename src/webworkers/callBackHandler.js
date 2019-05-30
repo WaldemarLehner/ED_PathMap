@@ -14,8 +14,21 @@
 * 
 */
 
+module.exports = {
+	addWorkers: (prepWorker,canvasWorker) => {
+		Webworkers.preparationWebworker = prepWorker;
+		Webworkers.canvasWebworker = canvasWorker;
+	},
+	callback: MessageFromWorker
+};
 
-module.exports = (MessageEvent) => {
+var UI = require("../UI");
+let Webworkers = {
+	preparationWebworker: undefined,
+	canvasWebworker: undefined
+};
+/** @param {MessageEvent} MessageEvent */
+function MessageFromWorker(MessageEvent){
 	let arrayOfCommands = MessageEvent.data;
 	validateArray(arrayOfCommands);
 	arrayOfCommands.forEach((el)=>{
@@ -26,7 +39,7 @@ module.exports = (MessageEvent) => {
 			console.error("Could not find the command.", el);
 		}
 	});
-};
+}
 
 /**
  * @param {Array} arr
@@ -54,15 +67,39 @@ function getCommandByString(string){
 }
 
 function setPreparedData(data){
-	console.log("setPreparedDate has been called with:",data);
+	//Send the prepared data over to the canvas Worker
+	//console.log("setPreparedDate has been called with:",data);
+	Webworkers.canvasWebworker.post(
+		[
+			{ cmd:"set.drawSystemPoints", params: data.drawInstructions.points },
+			{ cmd:"set.drawConnectionLines", params: data.drawInstructions.lines }
+		]
+	);
 }
 
 function logError(data){
 	console.error("One of the Webworkers sent this Error:",data);
 }
 
+/**
+ * @typedef userInterfaceData
+ * @property {number | void} loaderIDFinished The ID of the task that has been finished
+ * @property {string | void} smallText The small text to be displayed next
+ * 
+ */
+
+/**
+ * 
+ * @param {userInterfaceData} data 
+ */
 function userInterface(data){
-	console.log("userInterface has been called with:", data);
+	console.log(data);
+	if(typeof data.loaderIDFinished === "string"){
+		UI.updateLoadingBar(data.loaderIDFinished);
+	}else{console.error(data);}
+	if(typeof data.smallText === "string"){
+		UI.updateSmallText(data.smallText);
+	} else { console.error(data); }
 }
 
 function log(data){

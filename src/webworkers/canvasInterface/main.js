@@ -8,38 +8,133 @@ let canvasDimensions = {
 /** @type {HTMLCanvasElement} */
 let canvas;
 //init
-/**
- * @type {THREE.Scene[]} 
- */
+/**		@type {boolean[]} Has all active scenes as true, inactive as false*/
+let activeScenes = [];
+/**		@type {THREE.Scene[]} */
 let scenes = [];
-/**
- * @type {THREE.PerspectiveCamera}
- */
+/**		@type {THREE.PerspectiveCamera}*/
 let camera;
-/**
- * @type {THREE.WebGLRenderer}
- */
+/**		@type {THREE.WebGLRenderer}*/
 let renderer;
+/**		@type {THREE.Object3D} */
+let skybox;
+/**		@type {THREE.Object3D} */
+let galplane;
+/**		@type {THREE.Object3D} */
+let sectors;
 
+//#region [rgba(255,255,255,0.05)] Preload images
+let preloadedImages = {
+	skybox: [], // front, back,right,left,top,bottom
+	galplane: undefined,
+	sectors: undefined,
+	focusIndicator: [] //pan,vertical,circle
+};
+let preloadImagesCounter = 0; //when counter at 6+2+3 = 11, all neccesary images have been preloaded
 
+let preloadSrc = require("../../configuration/__DATASOURCE__CANVAS__").preload;
 
+/**
+ * @readonly
+ * @typedef preloadSrc
+ * @property {string[]} skybox
+ * @property {string} galplane
+ * @property {string} sectors
+ * @property {string[]} focusIndicator
+ */
 
+/**
+ * @param {preloadSrc} imgs 
+ */
+function preloadImages(imgs){
+	
+	let imgloader = (worker.isWorker) ? new THREE.ImageBitmapLoader() : new THREE.ImageLoader();
+	imgs.skybox.forEach((url, index) => {
+		imgloader.load(url, (texture) => {
+			preloadedImages.skybox[index] = texture;
+			preloadAddToCounter();
+		});
+	});
+	imgs.focusIndicators.forEach((url,index)=>{
+		imgloader.load(url,(texture)=>{
+			preloadedImages.focusIndicator[index] = texture;
+			preloadAddToCounter();
+		});
+	});
+	imgloader.load(imgs.galplane,(texture)=>{
+		preloadedImages.galplane = texture;
+		preloadAddToCounter();
+	});
+	imgloader.load(imgs.sectors,(texture)=>{
+		preloadedImages.sectors = texture;
+		preloadAddToCounter();
+	});
+}
+function preloadAddToCounter(){
+	preloadImagesCounter++;
+	
+	if(preloadImagesCounter === 11){	
+		// TODO: callback indicating all sources have been successfully loaded
+		worker.post([{ cmd: "UI", params: { loaderIDFinished:"FinishImageLoading",smallText: "Finished preloading images."}}]);
+		initSkybox();
+		initGalmap();
+		initSectors();
+	}
+	// eslint-disable-next-line indent
+//#endregion
+	// eslint-disable-next-line indent
+//#region [rgba(0,0,200,0.05)] Init functions
+	function initSkybox(){
+		let textures = preloadedImages.skybox;
+		let materials = [];
+		textures.forEach((texture)=>{
+			let material = new THREE.MeshBasicMaterial({map: texture,side:THREE.BackSide});
+			materials.push(material);
+		});
+		skybox = new THREE.Mesh(new THREE.BoxGeometry(500000, 500000, 500000),materials);
+		skybox.rotation.set(0, -Math.PI/2, 0);
+		scenes[0].add(skybox);
+		indicatePreparationDoneIfReady();
+	}
 
+	function initGalmap(){
+		/**@type {THREE.Texture} */
+		let texture = preloadedImages.galplane;
+		texture.minFilter = THREE.LinearFilter;
+		let material = new THREE.MeshBasicMaterial({map: texture,side:THREE.DoubleSide,color:0xFFFFFF,transparent:true,opacity:.8});
+		galplane = new THREE.Mesh(new THREE.PlaneGeometry(100000,100000),material);
+		scenes[0].add(galplane);
+		hasBeenDrawn[0] = true;
+		indicatePreparationDoneIfReady();
+		
+	}
 
+	function initSectors(){
+		/**@type {THREE.Texture} */
+		let texture = preloadedImages.sectors;
+		texture.minFilter = THREE.LinearFilter;
+		let material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide, color: 0xFFFFFF, transparent: true, opacity: .8 });
+		sectors = new THREE.Mesh(new THREE.PlaneGeometry(100000, 100000), material);
+		scenes[1].add(sectors);
+		hasBeenDrawn[1] = true;
+		indicatePreparationDoneIfReady();
+	}
+}
 
+//#endregion
 
 
 
 
 const worker = insideWorker(msg => {
-	
+	preloadImages(preloadSrc);
 	let data = msg.data;
 	if(typeof data.canvas === "object"){
 		
 		canvas = data.canvas;
 		canvasDimensions = {
-			x: data.canvas.width,
-			y: data.canvas.height
+			x: canvas.width,
+			y: canvas.height
 		};
 		renderer = new THREE.WebGLRenderer({
 			canvas,antialias:true
@@ -53,6 +148,8 @@ const worker = insideWorker(msg => {
 		}
 		camera = new THREE.PerspectiveCamera(75,canvasDimensions.x/canvasDimensions.y,0.1,Infinity);
 		updateFrustumPlane(canvasDimensions.x,canvasDimensions.y);
+		worker.post([{ cmd: "UI", params: { loaderIDFinished: "StartCanvasWorker", smallText: "Finished initializing canvas worker" } }]);
+
 	}
 	//If the passed data is not empty...
 	if (typeof data !== "undefined") {
@@ -76,9 +173,13 @@ function buildCommandAndExecute(data){
 }
 
 function animate(){
-	scenes.forEach((scene)=>{
-		renderer.render(scene,camera);
-		renderer.autoClear = false;
+	updateSkyboxPosition();
+
+	scenes.forEach((scene,index)=>{
+		if(activeScenes[index] === true){ //Skip drawing of scene when disabled
+			renderer.render(scene,camera);
+			renderer.autoClear = false;
+		}
 	});
 	renderer.autoClear = true;
 }
@@ -94,9 +195,14 @@ function getCommandFromCMDString(string){	//"a.b.c.d"
 		return;
 	}
 	let regexp = /[a-zA-z]+/;
-	let strings = string.split(regexp);
+	let strings = string.split(".");
+	strings.forEach((substr)=>{
+		if(!substr.match(regexp))
+			returnError("Passed command has Illegal Characters! Allowed characters are a-zA-z.");
+	});
 	try{
 		let command = eval("API."+strings.join("."));	// API.a.b.c.d 
+		
 		if(typeof command !== "function"){
 			throw new Error("API point does not exist");
 		}
@@ -114,23 +220,22 @@ function returnError(dataToReturn){
 }
 
 
-//#region [rgba(255,255,0,0.02)]
+//#region [rgba(255,255,0,0.02)] API
 //eslint is wrong here. It is being called using eval.
 // eslint-disable-next-line no-unused-vars
 const API = {
 	get: {
 		skybox:{
-			isHidden: undefined//TODO
+			isHidden: () => { return (activeScenes[0] === true) ? true : false; } //the === true is to handle undefined
 		},
 		galplane:{
-			isHidden: undefined//TODO
+			isHidden: () => { return (activeScenes[1] === true) ? true : false; } //the === true is to handle undefined
 		},
 		sectors: {
-			isHidden: undefined//TODO
+			isHidden: () => { return (activeScenes[2] === true) ? true : false; } //the === true is to handle undefined
 		},
 		scenes: {
-			isSceneUsed: undefined, //takes a num as arg, checks if it exists
-			allOccupiedScenes: undefined //returns an bool array, each index is the corresponsing scene
+			isSceneUsed: (x)=>{return typeof scenes[x] !== "undefined";} //takes a num as arg, checks if it exists
 		},
 		camera: {
 			position: getCameraPosition,
@@ -139,21 +244,21 @@ const API = {
 	},
 	set: {
 		skybox:{
-			init: undefined, //TODO
-			hide: undefined,
-			show: undefined
+			hide: () => { showHideScene(0, false); },
+			show: () => { showHideScene(0, true); }
 		},
 		galplane:{
-			init: undefined,
-			hide: undefined,
-			show: undefined
+			hide: () => { showHideScene(1, false); },
+			show: () => { showHideScene(1, true); }
 		},
 		sectors:{
-			init: undefined,
-			hide: undefined,
-			show: undefined
+			hide: () => { showHideScene(2, false); },
+			show: () => { showHideScene(2, true); }
 		},
+		drawConnectionLines: drawConnectionLines,
+		drawSystemPoints: drawSystemPoints,
 		scenes:{
+			showHideScene: showHideScene,
 			addScene: undefined, 	//Warning. Scene 0 is reserved for Skybox, 
 			//Scene 1 for Galplane, Scene 2 for Sectors, Scene 3 for Connection Lines, Scene 4 for System Points
 			clearScene: undefined
@@ -187,7 +292,7 @@ function updateFrustumPlane(width,height){
 }
 
 
-//#region [rgba(255,255,55,0.03)] Systems and Lines
+//#region [rgba(105,255,55,0.03)] Systems and Lines
 
 /**
  * @typedef {[number,number,number, ... number]} CoordinateBuffer [x,y,z,...]
@@ -212,7 +317,16 @@ function updateFrustumPlane(width,height){
  * @property {ColorBuffer} colors
  * @property {SizeBuffer} sizes
  */
-
+/**
+ * This array indicates which objects are done adding to the scene
+ */
+let hasBeenDrawn = [	//Index
+	false, //Skybox			0
+	false, //Galplane		1
+	false, //Sectors		2
+	false, //connections	3
+	false //systems			4
+];
 
 
 /**
@@ -248,6 +362,8 @@ function drawSystemPoints(data){
 		geometry.addAttribute("size",new THREE.Float32BufferAttribute(data.sizes,1));
 		let points = new THREE.Points(geometry,material);
 		scenes[4].add(points);
+		hasBeenDrawn[4] = true;
+		indicatePreparationDoneIfReady();
 		animate();
 	}
 }
@@ -270,6 +386,8 @@ function drawConnectionLines(data){
 	linesGeometry.addAttribute("color",new THREE.Float32BufferAttribute(data.colors,3));
 	let lineObject = new THREE.Line(linesGeometry,material);
 	scenes[3].add(lineObject);
+	hasBeenDrawn[3] = true;
+	indicatePreparationDoneIfReady();
 	animate();
 }
 
@@ -310,4 +428,41 @@ function createSceneIfUndefined(index){
 function getTextureByURL(url,callback){
 	let loader = (worker.isWorker) ? new THREE.ImageBitmapLoader() : new THREE.ImageLoader();
 	loader.load(url,callback);
+}
+/**
+ * 
+ * @param {number} sceneID 
+ * @param {boolean} show 
+ */
+function showHideScene(sceneID,show){
+	if(typeof sceneID !== "number")
+		throw "Please pass a number as sceneID";
+	if(typeof show !== "boolean")
+		throw "Please pass a boolean as show";
+	if(sceneID%1!==0)
+		sceneID = Math.floor(sceneID);
+	if(sceneID < 0)
+		throw "sceneID cannot be smaller than 0";
+	activeScenes[sceneID] = show;
+	animate();
+}
+
+function indicatePreparationDoneIfReady(){
+	hasBeenDrawn.forEach((bool)=>{
+		if(!bool){
+			return;
+		}
+	});
+	//If the fn reaches here, all objects have been drawn, time to send the message
+	worker.post([{ cmd: "UI", params: { loaderIDFinished: "FinishCanvasDrawing", smallText: "Finished drawing stuff onto the canvas." } }]);
+
+}
+
+
+/** This is called from animate() and will move the skybox so that there's no distortion on the skybox */
+function updateSkyboxPosition(){
+	if(typeof skybox === "undefined"){return;}
+	let camPosition = camera.position.clone();
+	skybox.position.set(camPosition.x,camPosition.y,camPosition.z);
+
 }

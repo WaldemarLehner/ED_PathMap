@@ -25,6 +25,9 @@ self.addEventListener("message",function(msg){
 function filterData(jsonData,url){
 	const generate = require("./generateF");
 	if(!validateJSON(jsonData)){throw new Error("Passed Logs have an unexpected structure.");}
+	self.postMessage([{ cmd: "UI", params: { loaderIDFinished: "StartProcessor", smallText: "Finished initializing json processor" } }]);
+	
+	
 	let indices = date.getIndexDateBounds(jsonData,date.getDateLimits(url));
 	jsonData = removeDatesOutOfBounds(jsonData,indices);
 	
@@ -47,7 +50,13 @@ function filterData(jsonData,url){
 		},
 		drawInstructions: drawInstructions
 	};
+	self.postMessage([
+		{ cmd: "UI", params: { loaderIDFinished: "FinishProcessing", smallText: "Finished processing data" } }
+		//{ cmd: "setPreparedData",params: data}
+	]);
 	return data;
+	
+	
 }
 
 

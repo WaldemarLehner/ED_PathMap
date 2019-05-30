@@ -5,11 +5,5 @@ module.exports = {
 		friends: undefined,
 		logs: undefined
 	},
-	skybox: undefined,
-	galplane: undefined,
-	ui: {
-		focusElement: undefined,
-		markers: undefined
-	},
 	default: (typeof window !== "undefined" )?(window.location.href).split("?")[0]:undefined
 };

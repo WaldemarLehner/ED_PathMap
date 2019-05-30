@@ -1,5 +1,6 @@
 WebWorker:
 	☐ Write the API to handle incoming calls to the Webworker	
+	✔ Preload all neccesary images @done(19-05-30 21:39)
 	THREE:
 		✔ Init Scene									@today @done(19-05-30 00:40)
 		✔ Write handler for resizing canvas @done(19-05-30 00:17)
@@ -7,21 +8,21 @@ WebWorker:
 		✔ Write Connection drawing function 			@today @high @done(19-05-30 13:52)
 		#Not possible in webworker. 
 		✘ Write a requestAnimationFrame loop that iterates through every Scene @cancelled(19-05-30 14:07)
-		☐ Write function to init skybox
-		☐ Write function to init galplane
-		☐ Write function to init sectors
+		☐ Write fn to init skybox
+		☐ Write fn to init galplane
+		☐ Write fn to init sectors
 		☐ Write fn to show/hide skybox, galplane and sectors
 		Camera:
 			✔ Write function to set camera rotation		@today @done(19-05-30 14:17)
 			✔ Write function to set camera position		@today @done(19-05-30 14:17)
 		☐ Write function to get a certain element by ID inside a Scene by index, and change the objects rotation and/or position and other params (thinking about transparency)
 		Scenes:
-			☐ Write function to hide scene by id
-			☐ Write function to check if a scene already exists
-			☐ Write function to add three objects to scene (this needs further thought)
+			✔ Write fn to hide scene by id @done(19-05-30 21:39)
+			✔ Write fn to check if a scene already exists @done(19-05-30 21:39)
+			☐ Write fn to add THREE objects to scene (this needs further thought)
 			
 CanvasInterface:
-	☐ implement functions to focus:
+	Implement fn to focus:
 		#This requires an Input Handler to be there first
 		☐ first											@today 
 		☐ last											@today 
@@ -49,3 +50,17 @@ HTML Page:
 		☐ Include Iconfont
 		☐ Find a Font for the Easteregg
 	☐ Mobile Support
+
+
+
+
+
+/** Loader Checklist (x) = how long data **
+** is expected to take**/
+☐ get Logs via jQuery XHR (medium)
+☐ start the data processor (small)
+☐ start the canvas Webworker (small)
+☐ finish processing data (big)
+☐ load images in the webworker (big)
+☐ draw points and connections onto the canvas (small-medium)
+

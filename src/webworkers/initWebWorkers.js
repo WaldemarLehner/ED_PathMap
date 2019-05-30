@@ -24,8 +24,7 @@ function preparationWorker(pathToWebWorkerScript,callback){
 }
 
 function canvasWorker(url,callback){
-	//Override callback for now.
-	callback = console.info;
+
 
 	let createWorker = require("offscreen-canvas/create-worker.js");
 
