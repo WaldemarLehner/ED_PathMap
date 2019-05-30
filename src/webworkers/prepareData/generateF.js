@@ -1,3 +1,29 @@
+/**
+ * @typedef { [number, number, number, ...number] } CoordinateBuffer x,y,z ...
+*/
+/**
+ * @typedef {[number, number, number, ...number]} ColorBuffer r,g,b ... 
+ */
+/**
+ * @typedef {number[]} SizeBuffer
+ */
+/**
+ *
+ * @typedef drawSystemConnectionsInstruction
+ * @property {CoordinateBuffer} coords
+ * @property {ColorBuffer} colors
+ *
+ */
+/**
+ *
+ * @typedef drawSystemPointsInstructions
+ * @property {CoordinateBuffer} coords
+ * @property {ColorBuffer} colors
+ * @property {SizeBuffer} sizes
+ */
+
+
+
 module.exports = {
 	systemMap: systemMap,
 	connectionMap: connectionMap,
@@ -99,7 +125,21 @@ function getConnectionName(name1,name2){
 }
 
 let generateColorsAndSizes = require("./generateColorsAnSizes");
+/**
+ * @typedef InstructionsObject
+ * @property {drawSystemConnectionsInstruction} connections
+ * @property {drawSystemPointsInstructions} points
+ */
 
+/**
+ * 
+ * @param {*[]} json 
+ * @param {*} points 
+ * @param {*} lines 
+ * @param {number} maxVisits 
+ * @returns {InstructionsObject}
+ * 
+ */
 function drawInstructions(json,points,lines,maxVisits){
 	//An Object w/ 2 Arrays. One for systems, and one for Connections
 
@@ -109,23 +149,41 @@ function drawInstructions(json,points,lines,maxVisits){
 	return instructions;
 }
 
-
+/**
+ * 
+ * @param {*} obj 
+ * @param {number} maxValues 
+ * @returns {drawSystemPointsInstructions}
+ */
 function generatePointInstructions(obj,maxValues){
-	let retArr = [];
+	/**
+	* @type {SizeBuffer}
+	*/
+	let sizeBuffer = [];
+	/**
+	 * @type {ColorBuffer}
+	 */
+	let colorBuffer = [];
+	/**
+	 * @type {CoordinateBuffer}
+	 */
+	let coordsBuffer = [];
 	for(let key in obj){
 		if(!obj.hasOwnProperty(key)){continue;}
 		let element = obj[key];
 		let coords = element.coords;
 		let count = element.count;
 
-		retArr.push({
-			color: generateColorsAndSizes.generateColor(count,true,maxValues),
-			size: generateColorsAndSizes.generatePointSize(count,maxValues),
-			position: coords
-		});
+		colorBuffer.push(generateColorsAndSizes.generateColor(count, true, maxValues));
+		sizeBuffer.push(generateColorsAndSizes.generatePointSize(count, maxValues));
+		coordsBuffer.push(coords.x,coords.y,coords.z);
 
 	}
-	return retArr;
+	return {
+		coords: coordsBuffer,
+		colors: colorBuffer,
+		sizes: sizeBuffer
+	};
 }
 /**
  *
@@ -133,9 +191,18 @@ function generatePointInstructions(obj,maxValues){
  * @param {[]} json
  * @param {object} obj
  * @param {number} maxValues
+ * @returns {drawSystemConnectionsInstruction}
  */
 function generateLineInstructions(json,lines,points,maxValues){
-	let retArr = [];
+	/**
+	 * @type {ColorBuffer}
+	 */
+	let colorBuffer = [];
+	/**
+	 * @type {CoordinateBuffer}
+	 */
+	let coordsBuffer = [];
+	//let retArr = [];
 	for(let iterator = 0;iterator<json.length-2; iterator++){
 		/*
 		*	For Each Connection, check if next connection has the same visitCount.
@@ -152,23 +219,39 @@ function generateLineInstructions(json,lines,points,maxValues){
 		}
 		let color = generateColorsAndSizes.generateColor(thisConnection.count,false,maxValues);
 		let position = points[thisObject.name].coords;
-		retArr.push({color:color,coords:position});
+		//retArr.push({color:color,coords:position});
+		colorBuffer.push(color);
+		coordsBuffer.push(coordsAsArray(position));
 		if (thisConnection.count !== nextConnection.count){
 			let color = generateColorsAndSizes.generateColor(nextConnection.count,false,maxValues);
-			retArr.push({color:color,coords:points[nextObject.name].coords});
+			//retArr.push({color:color,coords:points[nextObject.name].coords});
+			colorBuffer.push(color);
+			let coords = points[nextObject.name].coords;
+			coordsBuffer.push(coordsAsArray(coords));
 		}
 		if(iterator === json.length-2){
 			//Last loop.
 			//Add the last connection
 			let color = generateColorsAndSizes.generateColor(nextConnection);
-			retArr.push(
+			/*retArr.push(
 				{color:color,coords:points[nextObject.name].coords},
 				{color:color,coords:points[nextnextObject.name].coords}
-			);
+			);*/
+			colorBuffer.push(color,color); //Insert 2 colors into the buffer, as we insert 2 Vertices
+			coordsBuffer.push(coordsAsArray(points[nextObject.name].coords),coordsAsArray(points[nextnextObject.name].coords));
 		}
 		
 	}
-	return retArr;
+	return {coords: coordsBuffer,colors: colorBuffer};
+}
+
+/**
+ * 
+ * @param {object} _coords 
+ * @returns {[number,number,number]}
+ */
+function coordsAsArray(_coords){
+	return [_coords.x,_coords.y,_coords.z];
 }
 
 function isUndef(el){

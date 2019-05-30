@@ -14,6 +14,7 @@
 * 
 */
 
+
 module.exports = (MessageEvent) => {
 	let arrayOfCommands = MessageEvent.data;
 	validateArray(arrayOfCommands);

@@ -1,73 +1,55 @@
-"use strict";
-const THREE = require("three");
-const jQuery = require("jquery");
-var EDControls = require("./EDControls");
+//This is the canvas Interface. It#s the interface between the webworker and the main thread. 
+
 /**
  *
- *
- * @param {object} initArguments The Argument Wrapper
- * @param {"THREE.camera"} initArguments.camera The Scene Camera
- * @param {"THREE.Scene[]"} initArguments.scenes All the scenes passed as an array
- * @param {"THREE.Control"} initArguments.controls The Input Controller Object
- * @param {object} initArguments.linesref Container with all lines
- * @param {object} initArguments.pointsref Container with all points
- * @param {object} initArguments.logList Container with all logs
- * @param {object} initArguments.sysList Container with all necessary systems
+ * @typedef {Object} canvasInterfaceInputObject
+ * @property {array} logs The travel logs
+ * @property {Object} systemMap An Object containing all the necessary info about the systems
+ * @property {Object} connectionMap An Object containing all the necessary info about connections.
  */
-let validateInput = (initArguments) => {
-	const validate = require("./validate");
-	/**
-	 * Collects all the errors that happen when passing the arguments.
-	 */
-	let errorList = [];
-	/*
-	if(!(initArguments.camera instanceof THREE.Camera)){
-	}*/
-	if(!validate.one(initArguments.camera,THREE.Camera,true,true)){
-		createError(initArguments.camera, "camera needs to be typeof THREE.Camera.", errorList);
+
+/*
+ *
+ *
+ *
+ *
+ *
+ */
+
+
+module.exports = canvasInterface;
+
+/**
+ * 
+ * @param {canvasInterfaceInputObject} _data The Data object containing all the necessary data from the preparation Webworker
+ */
+function canvasInterface(_data){
+	if(typeof _data === "undefined"){
+		throw "_data needs to be an object containing an array and two objects.";
 	}
-
-	if(Array.isArray(initArguments.scenes)){
-		if (initArguments.scenes.length === 0) {
-			createError(initArguments.scenes, "scenes Array needs to be longer than one.", errorList);
-		}
-		else if (!validate.multiple(initArguments.scenes, Array(initArguments.scenes.length).fill(THREE.Scene), Array(initArguments.scenes.length).fill(true), Array(initArguments.scenes.length).fill(true))){
-			createError(initArguments.scenes, "scenes are not all typeof THREE.Scene", errorList);
-		}
-	}else{
-		createError(initArguments.scenes, "scenes needs to be an Array.", errorList);
+	//Check if the canvasInterface has been initialized with the "new" keyword.
+	//If not, return the canvasInterface with the "new" keyword -> initialize as instance.
+	if(!(this instanceof canvasInterface)){
+		return new canvasInterface();
 	}
+	//The data object contains the data given by the preparationWorker (without the instructions for the canvas Webworker). It is never modified.
+	let data = _data;
+	//Freeze the data so no code can modify it by accident.
+	Object.freeze(data);
+	//The pointers object contains data that points to a certain current value. For example the current System.
+	//currentSystem points to the array index of the current system
+	let pointers = {currentSystem: data.logs.length-1};
+	let settings = {
+		show:require("./configuration/drawParameters").canvasInterface.show
+	};
+	
+	//#region[rgba(255,255,2,0.05)] Camera Focus Functions
+	//This region has all the NOT-EXPOSED calls to manipulate the cameras position
+	let camera = {
 
-
-	if(!validate.one(initArguments.controls,EDControls,true,true)){
-		createError(initArguments.controls, "controls needs to be typeof EDControls", errorList);
-	}
-
-
-	//TODO!! Create Checks for linesref, pointsref, logList, sysList ALSO... CAN I CHANGE THE STRUCTURE?
-
-
-
-};
-function createError(object, errmsg,errorList) {
-	errorList.push([object, errmsg]);
+	};
+	//#endregion
+	//#region[rgba(255,255,255,0.1)] exposed functions
+		
+	//#endregion
 }
-
-
-/**
- *
- *
- * @param {object} initArguments The Argument Wrapper
- * @param {"THREE.camera"} initArguments.camera The Scene Camera
- * @param {"THREE.Scene[]"} initArguments.scenes All the scenes passed as an array
- * @param {"THREE.Control"} initArguments.controls The Input Controller Object
- * @param {object} initArguments.linesref Container with all lines
- * @param {object} initArguments.pointsref Container with all points
- * @param {object} initArguments.logList Container with all logs
- * @param {object} initArguments.sysList Container with all necessary systems
- */
-module.exports = (initArguments) => {
-	if(!validateInput(initArguments)){
-		//TODO!
-	}
-};

@@ -2,14 +2,21 @@ let definitions = require("../../configuration/drawParameters");
 let chroma = require("chroma-js");
 module.exports = {generateColor:generateColor,generatePointSize:generatePointSize};
 
-
+/**
+ * 
+ * @param {number} value 
+ * @param {boolean} isPoint 
+ * @param {number} maxVisits 
+ * @returns {number[]} 
+ */
 function generateColor(value,isPoint,maxVisits){
 	let minmax = [];
 	let def = (isPoint) ? definitions.systems.color : definitions.connections.color;
 	minmax[1] = (def.useMaxValueFromLogsInstead) ? maxVisits : def.maxVal;
 	minmax[0] = def.minVal;
 	let color = chroma.scale(def.colorGradient).mode("lab").domain(minmax[0],minmax[1]);
-	return color(value).num();
+	//return color(value).num();
+	return color(value).rgb();
 }
 
 function generatePointSize(value,maxVisits){

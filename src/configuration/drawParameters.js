@@ -33,6 +33,16 @@ module.exports = {
 			//If this is set, maxVal will be overwritten with whatever is the maximum from the logs.
 			useMaxValueFromLogsInstead: true
 		}
+	},
+	canvasInterface:{
+		show:{
+			galPlane: true,
+			galSectors: false,
+			skybox: true,
+			systems: true,
+			connections: true,
+			sysInfo: true
+		}
 	}
 
 };
