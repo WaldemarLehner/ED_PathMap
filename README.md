@@ -5,6 +5,15 @@
 ### What is ED Pathmap?
 ED Pathmap is a webtool that displays data from [EDSM](https://www.edsm.net/), a 3rd party tool which aggregates player data from the game "[Elite Dangerous](https://www.elitedangerous.com/)". This tool gathers travel data from EDSM for a certain player and displays it on the Milky Way, the game world. 
 
+#### Controls:
+```
+WASD: Panning horizontally
+QE: Rotation
+RF: Panning vertically
+XY: Zooming
+Left Mouse Button: Rotate
+Right Mouse Button: Pan
+```
 #### [Here's a  demo!](https://waldemarlehner.github.io/ED_PathMap/)
 
 ![ED Pathmap Screenshot](https://i.imgur.com/tFbZOA7.png)
